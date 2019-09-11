@@ -8,4 +8,4 @@ target_include_directories(core PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/ass
 
 target_link_libraries(core PRIVATE base)
 
-add_subdirectory(mesh)
+add_subdirectory(model)
