@@ -20,7 +20,7 @@ endif ()
 
 if (LINUX) 
 	# linux stuff here
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -W -Wall -Wextra -fno-rtti -fno-exceptions")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -W -Wall -Wextra")
 
 	#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
@@ -37,16 +37,6 @@ if (LINUX)
 elseif (MSVC)
 	# set(CMAKE_CXX_STANDARD 17) doesn't seem to work for visual studio target at the moment
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-
-	if (CMAKE_CXX_FLAGS MATCHES "/GR")
-		string(REGEX REPLACE "/GR" "/GR-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    endif()
-
-    # Disable exceptions
-    if (CMAKE_CXX_FLAGS MATCHES "/EHsc")
-        string(REGEX REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    endif()
-    add_definitions(-D_HAS_EXCEPTIONS=0)
 
 	# Force to always compile with W4
 	if (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -74,6 +64,21 @@ elseif (MSVC)
 	add_definitions(-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
     add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif ()
+
+# I found this solution to change default options before the first build.
+# It doesn't look nice but it seems to work.
+OPTION( ASSIMP_BUILD_ASSIMP_TOOLS
+  "If the supplementary tools for Assimp are built in addition to the library."
+  ON
+)
+OPTION ( ASSIMP_BUILD_TESTS
+  "If the test suite for Assimp is built in addition to the library."
+  ON
+)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
+set(ASSIMP_BUILD_TESTS OFF)
+
+add_subdirectory(../assimp ${CMAKE_BINARY_DIR}/assimp)
 
 add_subdirectory(base)
 add_subdirectory(core)

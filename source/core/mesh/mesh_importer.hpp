@@ -1,6 +1,9 @@
 #ifndef SU_CORE_MESH_IMPORTER_HPP
 #define SU_CORE_MESH_IMPORTER_HPP
 
+#include <assimp/Importer.hpp>
+#include <string>
+
 namespace mesh {
 
 class Mesh;
@@ -8,7 +11,11 @@ class Mesh;
 class Importer {
 public:
 
-    Mesh* import() const noexcept;
+    Mesh* read(std::string const& name) noexcept;
+
+private:
+
+    Assimp::Importer importer_;
 };
 
 }
