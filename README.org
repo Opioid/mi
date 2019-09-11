@@ -1,0 +1,3 @@
+* mi
+
+/mi/ stands for mesh importer and is a CLI application wrapped around [[https://github.com/assimp/assimp][assimp]].
