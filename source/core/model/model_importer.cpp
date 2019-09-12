@@ -54,8 +54,6 @@ Model* Importer::read(std::string const& name) noexcept {
         num_indices += part.num_indices;
     }
 
-    std::cout << num_vertices << std::endl;
-
     model->set_num_vertices(num_vertices);
 
     model->allocate_indices(num_indices);

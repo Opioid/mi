@@ -6,3 +6,5 @@ target_include_directories(cli PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_D
 target_include_directories(cli PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>)
 
 target_link_libraries(cli PRIVATE base core assimp)
+
+add_subdirectory(options)

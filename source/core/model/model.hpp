@@ -1,6 +1,7 @@
 #ifndef SU_CORE_MODEL_MODEL_HPP
 #define SU_CORE_MODEL_MODEL_HPP
 
+#include "base/math/aabb.hpp"
 #include "base/math/vector.hpp"
 
 #include <cstdint>
@@ -61,6 +62,8 @@ class Model {
     void set_index(uint32_t id, uint32_t index) noexcept;
 
     void scale(float3 const& s) noexcept;
+
+    AABB aabb() const noexcept;
 
   private:
     uint32_t num_parts_ = 0;

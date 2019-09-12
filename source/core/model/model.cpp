@@ -1,4 +1,5 @@
 #include "model.hpp"
+#include "base/math/aabb.inl"
 #include "base/math/vector4.inl"
 #include "base/memory/align.hpp"
 
@@ -114,6 +115,19 @@ void Model::scale(float3 const& s) noexcept {
     for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
         positions_[i] *= s;
     }
+}
+
+AABB Model::aabb() const noexcept {
+    AABB box = AABB::empty();
+
+    for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+        float3 const p = positions_[i];
+
+        box.bounds[0] = min(box.bounds[0], p);
+        box.bounds[1] = max(box.bounds[1], p);
+    }
+
+    return box;
 }
 
 }  // namespace model
