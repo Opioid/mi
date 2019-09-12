@@ -38,8 +38,9 @@ Model* Importer::read(std::string const& name) noexcept {
 
     memory::Buffer<uint32_t> group_vertex_offset(num_parts);
 
-    uint32_t num_vertices = 0;
-    uint32_t num_indices  = 0;
+    uint32_t num_materials = 0;
+    uint32_t num_vertices  = 0;
+    uint32_t num_indices   = 0;
 
     for (uint32_t m = 0; m < num_parts; ++m) {
         aiMesh const& mesh = *scene->mMeshes[m];
@@ -50,8 +51,21 @@ Model* Importer::read(std::string const& name) noexcept {
 
         group_vertex_offset[m] = num_vertices;
 
+        num_materials = std::max(num_materials, mesh.mMaterialIndex + 1);
         num_vertices += mesh.mNumVertices;
         num_indices += part.num_indices;
+    }
+
+    model->allocate_materials(num_materials);
+
+    for (uint32_t m = 0; m < num_parts; ++m) {
+        aiMesh const& mesh = *scene->mMeshes[m];
+
+        uint32_t const mi = mesh.mMaterialIndex;
+
+        if (model->materials()[mi].empty()) {
+            model->set_material(mi, *scene->mMaterials[0]);
+        }
     }
 
     model->set_num_vertices(num_vertices);

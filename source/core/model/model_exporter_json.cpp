@@ -1,4 +1,5 @@
 #include "model_exporter_json.hpp"
+#include "base/math/print.hpp"
 #include "base/math/vector4.inl"
 #include "model.hpp"
 
@@ -7,14 +8,14 @@
 
 namespace model {
 
-bool Exporter_json::write(const std::string& name, const Model& model) noexcept {
+bool Exporter_json::write(std::string const& name, Model const& model) const noexcept {
     std::ofstream stream(name + ".json");
 
     if (!stream) {
         return false;
     }
 
-    stream << "{" << std::endl;
+    stream << "{\n";
 
     stream << "\t\"geometry\": {\n";
 
@@ -168,6 +169,106 @@ bool Exporter_json::write(const std::string& name, const Model& model) noexcept 
     stream << "\n\t\t]\n";
 
     stream << "\t}\n";
+
+    stream << "}";
+
+    return true;
+}
+
+static void put_texture(std::ofstream& stream, std::string_view usage, std::string const& name,
+                        bool& previous) noexcept {
+    if (!name.empty()) {
+        if (previous) {
+            std::cout << ",{\n";
+        } else {
+            stream << "\t\t\t\t\t\t{\n";
+        }
+
+        stream << "\t\t\t\t\t\t{\n";
+        stream << "\t\t\t\t\t\t\t\"usage\": \"" << usage << "\",\n";
+        stream << "\t\t\t\t\t\t\t\"file\": \"" << name.substr(9) << "\"\n";
+        stream << "\t\t\t\t\t\t}";
+
+        previous = true;
+    }
+}
+
+bool Exporter_json::write_materials(std::string const& name, Model const& model) const noexcept {
+    std::ofstream stream(name + ".materials.json");
+
+    if (!stream) {
+        return false;
+    }
+
+    stream << "{\n";
+
+    stream << "\t\"materials\": [\n";
+
+    auto const* materials = model.materials();
+
+    for (uint32_t i = 0, len = model.num_materials(); i < len; ++i) {
+        auto const& m = materials[i];
+
+        stream << "\t\t{\n";
+        stream << "\t\t\t\"name\": \"" << m.name << "\",\n";
+
+        stream << "\t\t\t\"rendering\": {\n";
+
+        stream << "\t\t\t\t\"Substitute\": {\n";
+
+        bool const has_textures = !m.mask_texture.empty() || !m.color_texture.empty() ||
+                                  !m.normal_texture.empty();
+
+        bool previous = false;
+
+        if (has_textures) {
+            stream << "\t\t\t\t\t\"textures\": [\n";
+
+            put_texture(stream, "Mask", m.mask_texture, previous);
+            put_texture(stream, "Color", m.color_texture, previous);
+            put_texture(stream, "Normal", m.normal_texture, previous);
+
+            if (!m.roughness_texture.empty()) {
+                put_texture(stream, "Roughness", m.roughness_texture, previous);
+            } else {
+                put_texture(stream, "Shininess", m.shininess_texture, previous);
+            }
+
+            stream << "\t\t\t\t\t],\n";
+        }
+
+        if (m.color_texture.empty()) {
+            stream << "\t\t\t\t\t\"color\": " << m.diffuse_color << ",\n";
+        }
+
+        stream << "\t\t\t\t\t\"roughness\": " << m.roughness << "\n";
+
+        stream << "\t\t\t\t}\n";
+
+        stream << "\t\t\t}\n";
+
+        stream << "\t\t}";
+
+        if (i < len - 1) {
+            stream << ", {\n";
+        }
+    }
+
+    stream << "\n\t],\n\n";
+
+    stream << "\t\"names\": [\n";
+
+    for (uint32_t i = 0, len = model.num_materials(); i < len; ++i) {
+        auto const& m = materials[i];
+
+        stream << "\t\t\"" << m.name << "\"";
+
+        if (i < len - 1) {
+            stream << ",\n";
+        }
+    }
+
+    stream << "\n\t]\n";
 
     stream << "}";
 

@@ -1,23 +1,29 @@
 #include "model.hpp"
 #include "base/math/aabb.inl"
 #include "base/math/vector4.inl"
-#include "base/memory/align.hpp"
+
+#include <assimp/scene.h>
 
 namespace model {
 
 Model::~Model() noexcept {
-    memory::free_aligned(indices_);
+    delete[] indices_;
 
-    memory::free_aligned(tangents_and_bitangent_signs_);
-    memory::free_aligned(normals_);
-    memory::free_aligned(texture_coordinates_);
-    memory::free_aligned(positions_);
+    delete[] tangents_and_bitangent_signs_;
+    delete[] normals_;
+    delete[] texture_coordinates_;
+    delete[] positions_;
 
-    memory::free_aligned(parts_);
+    delete[] materials_;
+    delete[] parts_;
 }
 
 uint32_t Model::num_parts() const noexcept {
     return num_parts_;
+}
+
+uint32_t Model::num_materials() const noexcept {
+    return num_materials_;
 }
 
 uint32_t Model::num_vertices() const noexcept {
@@ -30,6 +36,10 @@ uint32_t Model::num_indices() const noexcept {
 
 Model::Part const* Model::parts() const noexcept {
     return parts_;
+}
+
+Model::Material const* Model::materials() const noexcept {
+    return materials_;
 }
 
 float3 const* Model::positions() const noexcept {
@@ -54,7 +64,12 @@ uint32_t const* Model::indices() const noexcept {
 
 void Model::allocate_parts(uint32_t num_parts) noexcept {
     num_parts_ = num_parts;
-    parts_     = memory::allocate_aligned<Part>(num_parts);
+    parts_     = new Part[num_parts];
+}
+
+void Model::allocate_materials(uint32_t num_materials) noexcept {
+    num_materials_ = num_materials;
+    materials_     = new Material[num_materials];
 }
 
 void Model::set_num_vertices(uint32_t num_vertices) noexcept {
@@ -62,27 +77,83 @@ void Model::set_num_vertices(uint32_t num_vertices) noexcept {
 }
 
 void Model::allocate_positions() noexcept {
-    positions_ = memory::allocate_aligned<float3>(num_vertices_);
+    positions_ = new float3[num_vertices_];
 }
 
 void Model::allocate_texture_coordinates() noexcept {
-    texture_coordinates_ = memory::allocate_aligned<float2>(num_vertices_);
+    texture_coordinates_ = new float2[num_vertices_];
 }
 void Model::allocate_normals() noexcept {
-    normals_ = memory::allocate_aligned<float3>(num_vertices_);
+    normals_ = new float3[num_vertices_];
 }
 void Model::allocate_tangents() noexcept {
-    tangents_and_bitangent_signs_ = memory::allocate_aligned<float4>(num_vertices_);
+    tangents_and_bitangent_signs_ = new float4[num_vertices_];
 }
 
 void Model::allocate_indices(uint32_t num_indices) noexcept {
     num_indices_ = num_indices;
 
-    indices_ = memory::allocate_aligned<uint32_t>(num_indices);
+    indices_ = new uint32_t[num_indices];
 }
 
 void Model::set_part(uint32_t id, Part const& part) noexcept {
     parts_[id] = part;
+}
+
+static inline float shininess_to_roughness(float shininess) noexcept {
+    return std::pow(2.f / (shininess + 2.f), 0.25f);
+}
+
+static inline float3 aiColor3D_to_float3(aiColor3D const& c) noexcept {
+    return float3(c.r, c.g, c.b);
+}
+
+static inline std::string aiTextureType_to_string(aiMaterial const& material,
+                                                  aiTextureType     type) noexcept {
+    std::string name;
+
+    if (aiString path; aiReturn_SUCCESS == material.GetTexture(type, 0, &path)) {
+        name = path.data;
+        std::replace(name.begin(), name.end(), '\\', '/');
+    }
+
+    return name;
+}
+
+void Model::set_material(uint32_t id, aiMaterial const& material) noexcept {
+    Material& m = materials_[id];
+
+    if (aiString text; aiReturn_SUCCESS == material.Get(AI_MATKEY_NAME, text)) {
+        m.name = text.data;
+    }
+
+    m.mask_texture = aiTextureType_to_string(material, aiTextureType_OPACITY);
+
+    m.color_texture = aiTextureType_to_string(material, aiTextureType_BASE_COLOR);
+
+    if (m.color_texture.empty()) {
+        m.color_texture = aiTextureType_to_string(material, aiTextureType_DIFFUSE);
+    }
+
+    m.normal_texture = aiTextureType_to_string(material, aiTextureType_NORMALS);
+
+    m.roughness_texture = aiTextureType_to_string(material, aiTextureType_DIFFUSE_ROUGHNESS);
+    m.shininess_texture = aiTextureType_to_string(material, aiTextureType_SHININESS);
+
+    if (aiColor3D diffuse_color;
+        aiReturn_SUCCESS == material.Get(AI_MATKEY_COLOR_DIFFUSE, diffuse_color)) {
+        m.diffuse_color = aiColor3D_to_float3(diffuse_color);
+    }
+
+    float shininess = -1.f;
+    material.Get(AI_MATKEY_SHININESS, shininess);
+
+    float roughness = 0.75f;
+    if (shininess > 0.f) {
+        roughness = shininess_to_roughness(shininess);
+    }
+
+    m.roughness = roughness;
 }
 
 void Model::set_position(uint32_t id, float3 const& p) noexcept {

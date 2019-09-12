@@ -38,6 +38,7 @@ int main(int argc, char* argv[]) noexcept {
     std::cout << "#triangles: " << model->num_indices() / 3 << std::endl;
     std::cout << "#vertices:  " << model->num_vertices() << std::endl;
     std::cout << "#parts:     " << model->num_parts() << std::endl;
+    std::cout << "#materials: " << model->num_materials() << std::endl;
 
     AABB const box = model->aabb();
 
@@ -48,6 +49,7 @@ int main(int argc, char* argv[]) noexcept {
     std::string const out = args.output.empty() ? discard_extension(args.input) : args.output;
 
     exporter.write(out, *model);
+    exporter.write_materials(out, *model);
 
     delete model;
 
