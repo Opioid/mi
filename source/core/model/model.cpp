@@ -188,6 +188,8 @@ void Model::scale(float3 const& s) noexcept {
     }
 }
 
+void Model::transform(flags::Flags<Transformation> transformtions) noexcept {}
+
 AABB Model::aabb() const noexcept {
     AABB box = AABB::empty();
 

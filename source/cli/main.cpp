@@ -27,6 +27,10 @@ int main(int argc, char* argv[]) noexcept {
         model->scale(float3(args.scale));
     }
 
+    if (!args.transformations.empty()) {
+        model->transform(args.transformations);
+    }
+
     std::cout << "\"" << args.input << "\"" << std::endl;
 
     for (size_t i = 0, len = args.input.size() + 2; i < len; ++i) {

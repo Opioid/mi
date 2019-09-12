@@ -16,6 +16,8 @@ static void help() noexcept;
 Options parse(int argc, char* argv[]) noexcept {
     Options result;
 
+    result.transformations.clear();
+
     if (1 == argc) {
         help();
         return result;
@@ -65,6 +67,8 @@ bool handle(std::string const& command, std::string const& parameter, Options& r
         result.input = parameter;
     } else if ("out" == command || "o" == command) {
         result.output = parameter;
+    } else if ("reverse-z" == command) {
+        result.transformations.set(model::Model::Transformation::Reverse_Z);
     } else if ("scale" == command || "s" == command) {
         result.scale = float(std::atof(parameter.data()));
     } else {

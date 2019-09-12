@@ -1,6 +1,7 @@
 #ifndef SU_CORE_MODEL_MODEL_HPP
 #define SU_CORE_MODEL_MODEL_HPP
 
+#include "base/flags/flags.hpp"
 #include "base/math/aabb.hpp"
 #include "base/math/vector.hpp"
 
@@ -12,6 +13,10 @@ struct aiMaterial;
 namespace model {
 class Model {
   public:
+    enum class Transformation {
+        Reverse_Z = 1 << 0,
+    };
+
     struct Part {
         uint32_t start_index;
         uint32_t num_indices;
@@ -91,6 +96,8 @@ class Model {
     void set_index(uint32_t id, uint32_t index) noexcept;
 
     void scale(float3 const& s) noexcept;
+
+    void transform(flags::Flags<Transformation> transformtions) noexcept;
 
     AABB aabb() const noexcept;
 
