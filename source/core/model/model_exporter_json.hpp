@@ -10,11 +10,10 @@ namespace model {
 class Model;
 
 class Exporter_json {
-public:
-
+  public:
     bool write(std::string const& name, Model const& model) noexcept;
 };
 
-}
+}  // namespace model
 
 #endif

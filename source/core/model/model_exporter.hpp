@@ -3,10 +3,8 @@
 
 namespace model {
 
-class Exporter {
+class Exporter {};
 
-};
-
-}
+}  // namespace model
 
 #endif

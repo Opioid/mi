@@ -1,6 +1,6 @@
 #include "model.hpp"
-#include "base/memory/align.hpp"
 #include "base/math/vector4.inl"
+#include "base/memory/align.hpp"
 
 namespace model {
 
@@ -26,7 +26,6 @@ uint32_t Model::num_vertices() const noexcept {
 uint32_t Model::num_indices() const noexcept {
     return num_indices_;
 }
-
 
 Model::Part const* Model::parts() const noexcept {
     return parts_;
@@ -54,7 +53,7 @@ uint32_t const* Model::indices() const noexcept {
 
 void Model::allocate_parts(uint32_t num_parts) noexcept {
     num_parts_ = num_parts;
-    parts_ = memory::allocate_aligned<Part>(num_parts);
+    parts_     = memory::allocate_aligned<Part>(num_parts);
 }
 
 void Model::set_num_vertices(uint32_t num_vertices) noexcept {
@@ -81,7 +80,6 @@ void Model::allocate_indices(uint32_t num_indices) noexcept {
     indices_ = memory::allocate_aligned<uint32_t>(num_indices);
 }
 
-
 void Model::set_part(uint32_t id, Part const& part) noexcept {
     parts_[id] = part;
 }
@@ -100,11 +98,22 @@ void Model::set_normal(uint32_t id, float3 const& n) noexcept {
 
 void Model::set_tangent(uint32_t id, float3 const& t, float3 const& b, float3 const& n) noexcept {
     normals_[id] = n;
-    tangents_and_bitangent_signs_[id] = float4(t, b[0]);
+
+    float3 const b2 = cross(t, n);
+
+    float const s = dot(b, b2);
+
+    tangents_and_bitangent_signs_[id] = float4(t, s > 0.f ? 1.f : -1.f);
 }
 
 void Model::set_index(uint32_t id, uint32_t index) noexcept {
     indices_[id] = index;
 }
 
+void Model::scale(float3 const& s) noexcept {
+    for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+        positions_[i] *= s;
+    }
 }
+
+}  // namespace model

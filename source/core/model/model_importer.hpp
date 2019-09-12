@@ -9,15 +9,13 @@ namespace model {
 class Model;
 
 class Importer {
-public:
-
+  public:
     Model* read(std::string const& name) noexcept;
 
-private:
-
+  private:
     Assimp::Importer importer_;
 };
 
-}
+}  // namespace model
 
 #endif
