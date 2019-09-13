@@ -2,9 +2,10 @@ target_sources(core
     PRIVATE
     "model.cpp"
     "model.hpp"
-    "model_exporter.hpp"
     "model_exporter_json.cpp"
     "model_exporter_json.hpp"
+    "model_exporter_sub.cpp"
+    "model_exporter_sub.hpp"
     "model_importer.cpp"
     "model_importer.hpp"
     )

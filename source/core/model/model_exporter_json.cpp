@@ -18,12 +18,11 @@ bool Exporter_json::write(std::string const& name, Model const& model) const noe
 
     stream << "\t\"geometry\": {\n";
 
-    // Groups
+    // Parts
     stream << "\t\t\"parts\": [\n";
 
+    Model::Part const* parts = model.parts();
     for (uint32_t i = 0, len = model.num_parts(); i < len; ++i) {
-        Model::Part const* parts = model.parts();
-
         stream << "\t\t\t{" << std::endl;
 
         stream << "\t\t\t\t\"material_index\": ";

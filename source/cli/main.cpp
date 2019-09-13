@@ -3,12 +3,14 @@
 #include "base/math/vector3.inl"
 #include "core/model/model.hpp"
 #include "core/model/model_exporter_json.hpp"
+#include "core/model/model_exporter_sub.hpp"
 #include "core/model/model_importer.hpp"
 #include "options/options.hpp"
 
 #include <iostream>
 
-std::string discard_extension(std::string const& filename) noexcept;
+std::string_view suffix(std::string_view filename) noexcept;
+std::string      discard_extension(std::string const& filename) noexcept;
 
 int main(int argc, char* argv[]) noexcept {
     auto const args = options::parse(argc, argv);
@@ -52,11 +54,19 @@ int main(int argc, char* argv[]) noexcept {
 
     std::cout << "AABB: {\n    " << box.bounds[0] << ",\n    " << box.bounds[1] << "}" << std::endl;
 
+    std::string const out = discard_extension(args.output.empty() ? args.input : args.output);
+
+    std::string_view const ext = suffix(args.output);
+
     model::Exporter_json exporter;
 
-    std::string const out = args.output.empty() ? discard_extension(args.input) : args.output;
+    if (ext.empty() || "json" == ext) {
+        exporter.write(out, *model);
+    } else if ("sub" == ext) {
+        model::Exporter_sub exporter_sub;
+        exporter_sub.write(out, *model);
+    }
 
-    exporter.write(out, *model);
     exporter.write_materials(out, *model);
 
     delete model;
@@ -64,6 +74,11 @@ int main(int argc, char* argv[]) noexcept {
     return 0;
 }
 
+std::string_view suffix(std::string_view filename) noexcept {
+    size_t const i = filename.find_last_of('.');
+    return filename.substr(i + 1, std::string::npos);
+}
+
 std::string discard_extension(std::string const& filename) noexcept {
-    return filename.substr(0, filename.find_first_of('.'));
+    return filename.substr(0, filename.find_last_of('.'));
 }
