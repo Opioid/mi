@@ -54,9 +54,6 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
         return false;
     }
 
-    const char header[] = "SUB\000";
-    stream.write(header, sizeof(char) * 4);
-
     std::stringstream jstream;
 
     newline(jstream, 0);
@@ -94,11 +91,18 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
 
     newline(jstream, 3);
 
+    static bool constexpr interleaved_vertex_stream = false;
+
     uint64_t const num_vertices  = model.num_vertices();
-    uint64_t       vertices_size = num_vertices * sizeof(Vertex);
+    uint64_t const vertices_size = interleaved_vertex_stream
+                                       ? num_vertices * sizeof(Vertex)
+                                       : num_vertices * (3 * 4 + 3 * 4 + 3 * 4 + 2 * 4 + 1);
 
     binary_tag(jstream, 0, vertices_size);
     jstream << ",";
+
+    newline(jstream, 3);
+    jstream << "\"num_vertices\":" << num_vertices << ",";
 
     newline(jstream, 3);
     jstream << "\"layout\":[";
@@ -106,8 +110,6 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     Vertex_layout_description::Element element;
 
     using Encoding = Vertex_layout_description::Encoding;
-
-    static bool constexpr interleaved_vertex_stream = false;
 
     if (interleaved_vertex_stream) {
         newline(jstream, 4);
@@ -199,12 +201,12 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
 
     if (max_index_delta <= 0x000000000000FFFF) {
         if (max_index_delta <= 0x0000000000008000) {
-      //      delta_indices = true;
+            delta_indices = true;
         }
 
         index_bytes = 2;
     } else if (max_index_delta <= 0x0000000080000000) {
-  //      delta_indices = true;
+        delta_indices = true;
     }
 
     newline(jstream, 3);
@@ -245,6 +247,10 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
 
     std::string const json_string = jstream.str();
     uint64_t const    json_size   = json_string.size() - 1;
+
+    const char header[] = "SUB\000";
+    stream.write(header, sizeof(char) * 4);
+
     stream.write(reinterpret_cast<char const*>(&json_size), sizeof(uint64_t));
     stream.write(reinterpret_cast<char const*>(json_string.data()), json_size * sizeof(char));
 
@@ -309,7 +315,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
 
         float4 const* tangents = model.tangents();
         for (uint32_t i = 0; i < num_vertices; ++i) {
-            if (normals) {
+            if (tangents) {
                 floats3[i] = packed_float3(tangents[i].xyz());
             } else {
                 floats3[i] = packed_float3(0.f);
@@ -322,7 +328,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
 
         float2 const* uvs = model.texture_coordinates();
         for (uint32_t i = 0; i < num_vertices; ++i) {
-            if (normals) {
+            if (uvs) {
                 floats2[i] = uvs[i];
             } else {
                 floats2[i] = float2(0.f);
@@ -334,12 +340,13 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
         uint8_t* bytes = reinterpret_cast<uint8_t*>(buffer.data());
 
         for (uint32_t i = 0; i < num_vertices; ++i) {
-            if (normals) {
+            if (tangents) {
                 bytes[i] = tangents[i][3] < 0.f ? 1 : 0;
             } else {
                 bytes[i] = 0;
             }
         }
+
         stream.write(reinterpret_cast<char const*>(bytes), num_vertices * sizeof(uint8_t));
     }
 
@@ -358,7 +365,8 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
                 previous_index = a;
             }
         } else {
-            stream.write(reinterpret_cast<char const*>(model.indices()), num_indices * sizeof(uint32_t));
+            stream.write(reinterpret_cast<char const*>(model.indices()),
+                         num_indices * sizeof(uint32_t));
         }
     } else {
         if (delta_indices) {
