@@ -61,14 +61,17 @@ bool handle_all(std::string const& command, std::string const& parameter,
 }
 
 bool handle(std::string const& command, std::string const& parameter, Options& result) noexcept {
+    using namespace model;
+
     if ("help" == command || "h" == command) {
         help();
     } else if ("in" == command || "i" == command) {
         result.input = parameter;
     } else if ("out" == command || "o" == command) {
         result.output = parameter;
-    } else if ("reverse-z" == command) {
-        result.transformations.set(model::Model::Transformation::Reverse_Z);
+    } else if ("reverse-xz" == command) {
+        result.transformations.set(Model::Transformation::Reverse_X);
+        result.transformations.set(Model::Transformation::Reverse_Z);
     } else if ("scale" == command || "s" == command) {
         result.scale = float(std::atof(parameter.data()));
     } else {

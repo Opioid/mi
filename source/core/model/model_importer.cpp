@@ -64,7 +64,7 @@ Model* Importer::read(std::string const& name) noexcept {
         uint32_t const mi = mesh.mMaterialIndex;
 
         if (model->materials()[mi].empty()) {
-            model->set_material(mi, *scene->mMaterials[0]);
+            model->set_material(mi, *scene->mMaterials[mi]);
         }
     }
 

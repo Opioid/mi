@@ -23,6 +23,10 @@ int main(int argc, char* argv[]) noexcept {
 
     model::Model* model = importer.read(args.input);
 
+    if (!model) {
+        return 0;
+    }
+
     if (args.scale > 0.f) {
         model->scale(float3(args.scale));
     }

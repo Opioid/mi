@@ -188,7 +188,43 @@ void Model::scale(float3 const& s) noexcept {
     }
 }
 
-void Model::transform(flags::Flags<Transformation> transformtions) noexcept {}
+void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
+    if (positions_) {
+        for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+            if (transformtions.test(Transformation::Reverse_X)) {
+                positions_[i][0] = -positions_[i][0];
+            }
+
+            if (transformtions.test(Transformation::Reverse_Z)) {
+                positions_[i][2] = -positions_[i][2];
+            }
+        }
+    }
+
+    if (normals_) {
+        for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+            if (transformtions.test(Transformation::Reverse_X)) {
+                normals_[i][0] = -normals_[i][0];
+            }
+
+            if (transformtions.test(Transformation::Reverse_Z)) {
+                normals_[i][2] = -normals_[i][2];
+            }
+        }
+    }
+
+    if (tangents_and_bitangent_signs_) {
+        for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+            if (transformtions.test(Transformation::Reverse_X)) {
+                tangents_and_bitangent_signs_[i][0] = -tangents_and_bitangent_signs_[i][0];
+            }
+
+            if (transformtions.test(Transformation::Reverse_Z)) {
+                tangents_and_bitangent_signs_[i][2] = -tangents_and_bitangent_signs_[i][2];
+            }
+        }
+    }
+}
 
 AABB Model::aabb() const noexcept {
     AABB box = AABB::empty();

@@ -4,7 +4,6 @@
 #include "model.hpp"
 
 #include <fstream>
-#include <iostream>
 
 namespace model {
 
@@ -179,12 +178,11 @@ static void put_texture(std::ofstream& stream, std::string_view usage, std::stri
                         bool& previous) noexcept {
     if (!name.empty()) {
         if (previous) {
-            std::cout << ",{\n";
+            stream << ", {\n";
         } else {
             stream << "\t\t\t\t\t\t{\n";
         }
 
-        stream << "\t\t\t\t\t\t{\n";
         stream << "\t\t\t\t\t\t\t\"usage\": \"" << usage << "\",\n";
         stream << "\t\t\t\t\t\t\t\"file\": \"" << name.substr(9) << "\"\n";
         stream << "\t\t\t\t\t\t}";
@@ -202,14 +200,14 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
 
     stream << "{\n";
 
-    stream << "\t\"materials\": [\n";
+    stream << "\t\"materials\": [\n\t\t";
 
     auto const* materials = model.materials();
 
     for (uint32_t i = 0, len = model.num_materials(); i < len; ++i) {
         auto const& m = materials[i];
 
-        stream << "\t\t{\n";
+        stream << "{\n";
         stream << "\t\t\t\"name\": \"" << m.name << "\",\n";
 
         stream << "\t\t\t\"rendering\": {\n";
@@ -234,7 +232,7 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
                 put_texture(stream, "Shininess", m.shininess_texture, previous);
             }
 
-            stream << "\t\t\t\t\t],\n";
+            stream << "\n\t\t\t\t\t],\n";
         }
 
         if (m.color_texture.empty()) {
@@ -250,7 +248,7 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
         stream << "\t\t}";
 
         if (i < len - 1) {
-            stream << ", {\n";
+            stream << ", ";
         }
     }
 

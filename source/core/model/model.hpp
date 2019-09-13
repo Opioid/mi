@@ -14,7 +14,8 @@ namespace model {
 class Model {
   public:
     enum class Transformation {
-        Reverse_Z = 1 << 0,
+        Reverse_X = 1 << 0,
+        Reverse_Z = 1 << 1,
     };
 
     struct Part {

@@ -14,7 +14,7 @@ struct Flags {
     Flags(T flag) : values(static_cast<impl_type>(flag)) {}
 
     constexpr bool empty() const noexcept {
-        return impl_type(0) != values;
+        return impl_type(0) == values;
     }
 
     constexpr bool test(T flag) const noexcept {
