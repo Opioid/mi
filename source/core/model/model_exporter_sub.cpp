@@ -43,7 +43,7 @@ static void newline(std::ostream& stream, uint32_t num_tabs) noexcept {
     }
 }
 
-static void binary_tag(std::ostream& stream, size_t offset, size_t size) noexcept {
+static void binary_tag(std::ostream& stream, uint64_t offset, uint64_t size) noexcept {
     stream << "\"binary\":{\"offset\":" << offset << ",\"size\":" << size << "}";
 }
 
@@ -215,6 +215,9 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     jstream << ",";
 
     newline(jstream, 3);
+    jstream << "\"num_indices\":" << num_indices << ",";
+
+    newline(jstream, 3);
     jstream << "\"encoding\":";
 
     if (4 == index_bytes) {
@@ -357,7 +360,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
 
         if (delta_indices) {
             for (uint32_t i = 0; i < num_indices; ++i) {
-                int32_t const a = static_cast<int32_t>(indices[i]);
+                int32_t const a = int32_t(indices[i]);
 
                 int32_t const delta_index = a - previous_index;
                 stream.write(reinterpret_cast<char const*>(&delta_index), sizeof(int32_t));
@@ -374,14 +377,14 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
             for (uint32_t i = 0; i < num_indices; ++i) {
                 int32_t const a = static_cast<int32_t>(indices[i]);
 
-                int16_t const delta_index = static_cast<int16_t>(a - previous_index);
+                int16_t const delta_index = int16_t(a - previous_index);
                 stream.write(reinterpret_cast<char const*>(&delta_index), sizeof(int16_t));
 
                 previous_index = a;
             }
         } else {
             for (uint32_t i = 0; i < num_indices; ++i) {
-                uint16_t const a = static_cast<uint16_t>(indices[i]);
+                uint16_t const a = uint16_t(indices[i]);
                 stream.write(reinterpret_cast<char const*>(&a), sizeof(uint16_t));
             }
         }
