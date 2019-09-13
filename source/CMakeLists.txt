@@ -65,19 +65,6 @@ elseif (MSVC)
     add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif ()
 
-# I found this solution to change default options before the first build.
-# It doesn't look nice but it seems to work.
-OPTION( ASSIMP_BUILD_ASSIMP_TOOLS
-  "If the supplementary tools for Assimp are built in addition to the library."
-  ON
-)
-OPTION ( ASSIMP_BUILD_TESTS
-  "If the test suite for Assimp is built in addition to the library."
-  ON
-)
-set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
-set(ASSIMP_BUILD_TESTS OFF)
-
 add_subdirectory(../assimp ${CMAKE_BINARY_DIR}/assimp)
 
 add_subdirectory(base)
