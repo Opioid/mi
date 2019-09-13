@@ -69,6 +69,8 @@ bool handle(std::string const& command, std::string const& parameter, Options& r
         result.input = parameter;
     } else if ("out" == command || "o" == command) {
         result.output = parameter;
+    } else if ("center-bottom" == command) {
+        result.origin = Model::Origin::Center_bottom;
     } else if ("reverse-xz" == command) {
         result.transformations.set(Model::Transformation::Reverse_X);
         result.transformations.set(Model::Transformation::Reverse_Z);
@@ -103,14 +105,17 @@ bool is_parameter(std::string_view text) noexcept {
 
 void help() noexcept {
     static std::string const text =
-        R"(it is an image tool
+        R"(mi is a model importer
 Usage:
   it [OPTION...]
 
-  -h, --help          Print help.
-  -i, --in     file   File name of the input model.
-  -o, --out    file   File name of the output files, without extension.
-  -s, --scale  float  Scalar (> 0) to uniformly scale the model by.)";
+  -h, --help           Print help.
+  -i, --in     file    File name of the input model.
+  -o, --out    file    File name of the output files, without extension.
+      --center-bottom  Set the model's origin to the center bottom,
+                       e.g. [0, -1, 0] for the unit cube.
+      --reverse-xz     Reverse the X and Z axis of the model's vertices.
+  -s, --scale  float   Scalar (> 0) to uniformly scale the model by.)";
 
     std::cout << text << std::endl;
 }

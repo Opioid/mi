@@ -18,6 +18,8 @@ class Model {
         Reverse_Z = 1 << 1,
     };
 
+    enum class Origin { Default = 0, Center_bottom };
+
     struct Part {
         uint32_t start_index;
         uint32_t num_indices;
@@ -99,6 +101,8 @@ class Model {
     void scale(float3 const& s) noexcept;
 
     void transform(flags::Flags<Transformation> transformtions) noexcept;
+
+    void set_origin(Origin origin) noexcept;
 
     AABB aabb() const noexcept;
 

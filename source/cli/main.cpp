@@ -31,9 +31,9 @@ int main(int argc, char* argv[]) noexcept {
         model->scale(float3(args.scale));
     }
 
-    if (!args.transformations.empty()) {
-        model->transform(args.transformations);
-    }
+    model->transform(args.transformations);
+
+    model->set_origin(args.origin);
 
     std::cout << "\"" << args.input << "\"" << std::endl;
 

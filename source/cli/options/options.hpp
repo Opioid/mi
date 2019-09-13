@@ -13,6 +13,8 @@ struct Options {
 
     std::string output;
 
+    model::Model::Origin origin = model::Model::Origin::Default;
+
     float scale = -1.f;
 
     flags::Flags<model::Model::Transformation> transformations;

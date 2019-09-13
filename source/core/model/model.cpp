@@ -189,6 +189,10 @@ void Model::scale(float3 const& s) noexcept {
 }
 
 void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
+    if (transformtions.empty()) {
+        return;
+    }
+
     if (positions_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
             if (transformtions.test(Transformation::Reverse_X)) {
@@ -222,6 +226,25 @@ void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
             if (transformtions.test(Transformation::Reverse_Z)) {
                 tangents_and_bitangent_signs_[i][2] = -tangents_and_bitangent_signs_[i][2];
             }
+        }
+    }
+}
+
+void Model::set_origin(Origin origin) noexcept {
+    if (Origin::Default == origin) {
+        return;
+    }
+
+    if (Origin::Center_bottom == origin) {
+        AABB const box = aabb();
+
+        float3 const position = box.position();
+        float3 const halfsize = box.halfsize();
+
+        float3 const offset = float3(-position[0], halfsize[1] - position[1], -position[2]);
+
+        for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+            positions_[i] += offset;
         }
     }
 }
