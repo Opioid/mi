@@ -198,11 +198,11 @@ void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
 
     if (positions_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
-            if (transformtions.test(Transformation::Reverse_X)) {
+            if (transformtions.is(Transformation::Reverse_X)) {
                 positions_[i][0] = -positions_[i][0];
             }
 
-            if (transformtions.test(Transformation::Reverse_Z)) {
+            if (transformtions.is(Transformation::Reverse_Z)) {
                 positions_[i][2] = -positions_[i][2];
             }
         }
@@ -210,11 +210,11 @@ void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
 
     if (normals_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
-            if (transformtions.test(Transformation::Reverse_X)) {
+            if (transformtions.is(Transformation::Reverse_X)) {
                 normals_[i][0] = -normals_[i][0];
             }
 
-            if (transformtions.test(Transformation::Reverse_Z)) {
+            if (transformtions.is(Transformation::Reverse_Z)) {
                 normals_[i][2] = -normals_[i][2];
             }
         }
@@ -222,20 +222,20 @@ void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
 
     if (tangents_and_bitangent_signs_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
-            if (transformtions.test(Transformation::Reverse_X)) {
+            if (transformtions.is(Transformation::Reverse_X)) {
                 tangents_and_bitangent_signs_[i][0] = -tangents_and_bitangent_signs_[i][0];
             }
 
-            if (transformtions.test(Transformation::Reverse_Z)) {
+            if (transformtions.is(Transformation::Reverse_Z)) {
                 tangents_and_bitangent_signs_[i][2] = -tangents_and_bitangent_signs_[i][2];
             }
         }
     }
 
-    if ((transformtions.test(Transformation::Reverse_X) &&
-         transformtions.test_not(Transformation::Reverse_Z)) ||
-        (transformtions.test(Transformation::Reverse_Z) &&
-         transformtions.test_not(Transformation::Reverse_X))) {
+    if ((transformtions.is(Transformation::Reverse_X) &&
+         transformtions.no(Transformation::Reverse_Z)) ||
+        (transformtions.is(Transformation::Reverse_Z) &&
+         transformtions.no(Transformation::Reverse_X))) {
         for (uint32_t i = 0, len = num_indices_; i < len; i += 3) {
             std::swap(indices_[i + 1], indices_[i + 2]);
         }
