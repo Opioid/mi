@@ -9,6 +9,8 @@
 
 #include <iostream>
 
+std::string autocomplete(std::string const& source, std::string const& addition) noexcept;
+
 std::string_view suffix(std::string_view filename) noexcept;
 
 std::string discard_extension(std::string const& filename) noexcept;
@@ -55,7 +57,8 @@ int main(int argc, char* argv[]) noexcept {
 
     std::cout << "AABB: {\n    " << box.bounds[0] << ",\n    " << box.bounds[1] << "}" << std::endl;
 
-    std::string const out = discard_extension(args.output.empty() ? args.input : args.output);
+    std::string const out = discard_extension(
+        args.output.empty() ? args.input : autocomplete(args.output, args.input));
 
     std::string_view const ext = suffix(args.output);
 
@@ -73,6 +76,14 @@ int main(int argc, char* argv[]) noexcept {
     delete model;
 
     return 0;
+}
+
+std::string autocomplete(std::string const& source, std::string const& addition) noexcept {
+    if (source[0] == '.') {
+        return discard_extension(addition) + source;
+    }
+
+    return source;
 }
 
 std::string_view suffix(std::string_view filename) noexcept {
