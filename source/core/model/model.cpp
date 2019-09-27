@@ -140,9 +140,12 @@ void Model::set_material(uint32_t id, aiMaterial const& material) noexcept {
     m.roughness_texture = aiTextureType_to_string(material, aiTextureType_DIFFUSE_ROUGHNESS);
     m.shininess_texture = aiTextureType_to_string(material, aiTextureType_SHININESS);
 
-    if (aiColor3D diffuse_color;
-        aiReturn_SUCCESS == material.Get(AI_MATKEY_COLOR_DIFFUSE, diffuse_color)) {
-        m.diffuse_color = aiColor3D_to_float3(diffuse_color);
+    if (aiColor3D color; aiReturn_SUCCESS == material.Get(AI_MATKEY_COLOR_DIFFUSE, color)) {
+        m.diffuse_color = aiColor3D_to_float3(color);
+    }
+
+    if (aiColor3D color; aiReturn_SUCCESS == material.Get(AI_MATKEY_COLOR_EMISSIVE, color)) {
+        m.emissive_color = aiColor3D_to_float3(color);
     }
 
     float shininess = -1.f;
@@ -226,6 +229,15 @@ void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
             if (transformtions.test(Transformation::Reverse_Z)) {
                 tangents_and_bitangent_signs_[i][2] = -tangents_and_bitangent_signs_[i][2];
             }
+        }
+    }
+
+    if ((transformtions.test(Transformation::Reverse_X) &&
+         transformtions.test_not(Transformation::Reverse_Z)) ||
+        (transformtions.test(Transformation::Reverse_Z) &&
+         transformtions.test_not(Transformation::Reverse_X))) {
+        for (uint32_t i = 0, len = num_indices_; i < len; i += 3) {
+            std::swap(indices_[i + 1], indices_[i + 2]);
         }
     }
 }

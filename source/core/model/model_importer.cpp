@@ -6,14 +6,28 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <iostream>
+#include <set>
+#include <sstream>
+#include <vector>
 
 namespace model {
 
 static inline float3 aiVector3_to_float3(aiVector3D const& v) noexcept;
 
 Model* Importer::read(std::string const& name) noexcept {
+    //    std::vector<aiNode const*> nodes;
+    //    guess_light_nodes(name, nodes);
+
+    //    std::stringstream excludes;
+
+    //    for (auto const n : nodes) {
+    //        excludes << n->mName.C_Str() << " ";
+    //    }
+
     importer_.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
                                  aiComponent_COLORS /*| aiComponent_NORMALS*/);
+
+    //   importer_.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, excludes.str());
 
     aiScene const* scene = importer_.ReadFile(
         name, aiProcess_ConvertToLeftHanded | aiProcess_RemoveComponent | aiProcess_Triangulate |
@@ -135,6 +149,55 @@ Model* Importer::read(std::string const& name) noexcept {
     }
 
     return model;
+}
+
+bool contains_material(aiNode const* node, aiScene const* scene,
+                       std::set<uint32_t> const& materials) noexcept {
+    for (uint32_t i = 0, len = node->mNumMeshes; i < len; ++i) {
+        uint32_t const mi = scene->mMeshes[node->mMeshes[i]]->mMaterialIndex;
+
+        if (materials.end() != materials.find(mi)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void gather_nodes(aiNode const* node, aiScene const* scene, std::set<uint32_t> const& materials,
+                  std::vector<aiNode const*>& nodes) noexcept {
+    uint32_t const num_children = node->mNumChildren;
+
+    if (0 == num_children) {
+        if (contains_material(node, scene, materials)) {
+            nodes.push_back(node);
+        }
+    } else {
+        for (uint32_t i = 0; i < num_children; ++i) {
+            gather_nodes(node->mChildren[i], scene, materials, nodes);
+        }
+    }
+}
+
+void Importer::guess_light_nodes(std::string const&          name,
+                                 std::vector<aiNode const*>& nodes) noexcept {
+    aiScene const* scene = importer_.ReadFile(name, 0);
+
+    if (!scene) {
+        return;
+    }
+
+    std::set<uint32_t> emissive_materials;
+
+    for (uint32_t i = 0, len = scene->mNumMaterials; i < len; ++i) {
+        std::string name = scene->mMaterials[i]->GetName().C_Str();
+
+        if (std::string::npos != name.find("Emissive")) {
+            emissive_materials.insert(i);
+        }
+    }
+
+    gather_nodes(scene->mRootNode, scene, emissive_materials, nodes);
 }
 
 static inline float3 aiVector3_to_float3(aiVector3D const& v) noexcept {

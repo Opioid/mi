@@ -3,6 +3,9 @@
 
 #include <assimp/Importer.hpp>
 #include <string>
+#include <vector>
+
+struct aiNode;
 
 namespace model {
 
@@ -13,6 +16,8 @@ class Importer {
     Model* read(std::string const& name) noexcept;
 
   private:
+    void guess_light_nodes(std::string const& name, std::vector<aiNode const*>& nodes) noexcept;
+
     Assimp::Importer importer_;
 };
 

@@ -71,7 +71,11 @@ bool handle(std::string const& command, std::string const& parameter, Options& r
         result.output = parameter;
     } else if ("center-bottom" == command) {
         result.origin = Model::Origin::Center_bottom;
-    } else if ("reverse-xz" == command) {
+    } else if ("reverse-x" == command) {
+        result.transformations.set(Model::Transformation::Reverse_X);
+    } else if ("reverse-z" == command) {
+        result.transformations.set(Model::Transformation::Reverse_Z);
+    } else if ("reverse-xz" == command || "reverse-zx" == command) {
         result.transformations.set(Model::Transformation::Reverse_X);
         result.transformations.set(Model::Transformation::Reverse_Z);
     } else if ("scale" == command || "s" == command) {
@@ -114,7 +118,7 @@ Usage:
   -o, --out    file    File name of the output files, without extension.
       --center-bottom  Set the model's origin to the center bottom,
                        e.g. [0, -1, 0] for the unit cube.
-      --reverse-xz     Reverse the X and Z axis of the model's vertices.
+      --reverse-[xz]   Reverse the specified axis of the model's vertices.
   -s, --scale  float   Scalar (> 0) to uniformly scale the model by.)";
 
     std::cout << text << std::endl;

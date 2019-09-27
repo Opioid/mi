@@ -10,7 +10,8 @@
 #include <iostream>
 
 std::string_view suffix(std::string_view filename) noexcept;
-std::string      discard_extension(std::string const& filename) noexcept;
+
+std::string discard_extension(std::string const& filename) noexcept;
 
 int main(int argc, char* argv[]) noexcept {
     auto const args = options::parse(argc, argv);

@@ -41,6 +41,8 @@ class Model {
 
         float3 diffuse_color = float3(0.75f);
 
+        float3 emissive_color = float3(0.f);
+
         float roughness = -1.f;
     };
 
