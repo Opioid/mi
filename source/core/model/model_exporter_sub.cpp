@@ -180,6 +180,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     jstream << "\"indices\":{";
 
     int64_t max_index_delta = 0;
+    int64_t min_index_delta = 0;
 
     {
         int64_t previous_index = 0;
@@ -191,6 +192,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
             int64_t const delta_index = si - previous_index;
 
             max_index_delta = std::max(delta_index, max_index_delta);
+            min_index_delta = std::min(delta_index, min_index_delta);
 
             previous_index = si;
         }
@@ -199,7 +201,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     bool   delta_indices = false;
     size_t index_bytes   = 4;
 
-    if (max_index_delta <= 0x000000000000FFFF) {
+    if (max_index_delta <= 0x000000000000FFFF && std::abs(min_index_delta) <= 0x000000000000FFFF) {
         if (max_index_delta <= 0x0000000000008000) {
             delta_indices = true;
         }
@@ -385,6 +387,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
         } else {
             for (uint32_t i = 0; i < num_indices; ++i) {
                 uint16_t const a = uint16_t(indices[i]);
+
                 stream.write(reinterpret_cast<char const*>(&a), sizeof(uint16_t));
             }
         }
