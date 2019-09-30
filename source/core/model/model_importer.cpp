@@ -86,16 +86,18 @@ Model* Importer::read(std::string const& name) noexcept {
 
     model->allocate_indices(num_indices);
 
-    bool const has_positions     = scene->mMeshes[0]->HasPositions();
-    bool const has_uvs           = scene->mMeshes[0]->HasTextureCoords(0);
-    bool const has_normals       = scene->mMeshes[0]->HasNormals();
-    bool const has_tangent_space = has_normals && scene->mMeshes[0]->HasTangentsAndBitangents();
+    bool const has_positions = scene->mMeshes[0]->HasPositions();
+    bool const has_uvs       = scene->mMeshes[0]->HasTextureCoords(0);
+    bool const has_normals   = scene->mMeshes[0]->HasNormals();
+    bool const has_tangents  = has_normals && scene->mMeshes[0]->HasTangentsAndBitangents();
+
+    bool const has_uvs_and_tangents = has_uvs && has_tangents;
 
     if (has_positions) {
         model->allocate_positions();
     }
 
-    if (has_uvs) {
+    if (has_uvs_and_tangents) {
         model->allocate_texture_coordinates();
     }
 
@@ -103,7 +105,7 @@ Model* Importer::read(std::string const& name) noexcept {
         model->allocate_normals();
     }
 
-    if (has_tangent_space) {
+    if (has_uvs_and_tangents) {
         model->allocate_tangents();
     }
 
@@ -119,13 +121,13 @@ Model* Importer::read(std::string const& name) noexcept {
                 model->set_position(current_vertex, aiVector3_to_float3(mesh.mVertices[v]));
             }
 
-            if (has_uvs && mesh.HasTextureCoords(0)) {
+            if (has_uvs_and_tangents && mesh.HasTextureCoords(0)) {
                 model->set_texture_coordinate(current_vertex, float2(mesh.mTextureCoords[0][v].x,
                                                                      mesh.mTextureCoords[0][v].y));
             }
 
             if (has_normals && mesh.HasNormals()) {
-                if (!has_tangent_space) {
+                if (!has_uvs_and_tangents) {
                     model->set_normal(current_vertex, aiVector3_to_float3(mesh.mNormals[v]));
                 } else {
                     float3 const tangent   = aiVector3_to_float3(mesh.mTangents[v]);

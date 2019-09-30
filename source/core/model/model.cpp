@@ -9,9 +9,10 @@ namespace model {
 Model::~Model() noexcept {
     delete[] indices_;
 
+    delete[] texture_coordinates_;
     delete[] tangents_and_bitangent_signs_;
     delete[] normals_;
-    delete[] texture_coordinates_;
+
     delete[] positions_;
 
     delete[] materials_;
@@ -46,16 +47,16 @@ float3 const* Model::positions() const noexcept {
     return positions_;
 }
 
-float2 const* Model::texture_coordinates() const noexcept {
-    return texture_coordinates_;
-}
-
 float3 const* Model::normals() const noexcept {
     return normals_;
 }
 
 float4 const* Model::tangents() const noexcept {
     return tangents_and_bitangent_signs_;
+}
+
+float2 const* Model::texture_coordinates() const noexcept {
+    return texture_coordinates_;
 }
 
 uint32_t const* Model::indices() const noexcept {
@@ -80,14 +81,16 @@ void Model::allocate_positions() noexcept {
     positions_ = new float3[num_vertices_];
 }
 
-void Model::allocate_texture_coordinates() noexcept {
-    texture_coordinates_ = new float2[num_vertices_];
-}
 void Model::allocate_normals() noexcept {
     normals_ = new float3[num_vertices_];
 }
+
 void Model::allocate_tangents() noexcept {
     tangents_and_bitangent_signs_ = new float4[num_vertices_];
+}
+
+void Model::allocate_texture_coordinates() noexcept {
+    texture_coordinates_ = new float2[num_vertices_];
 }
 
 void Model::allocate_indices(uint32_t num_indices) noexcept {

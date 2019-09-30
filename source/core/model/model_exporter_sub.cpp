@@ -93,10 +93,16 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
 
     static bool constexpr interleaved_vertex_stream = false;
 
+    bool const has_uvs_and_tangents = nullptr != model.texture_coordinates() &&
+                                      nullptr != model.tangents();
+
+    uint64_t const vertex_size = interleaved_vertex_stream
+                                     ? sizeof(Vertex)
+                                     : (has_uvs_and_tangents ? (3 * 4 + 3 * 4 + 3 * 4 + 2 * 4 + 1)
+                                                             : (3 * 4 + 3 * 4));
+
     uint64_t const num_vertices  = model.num_vertices();
-    uint64_t const vertices_size = interleaved_vertex_stream
-                                       ? num_vertices * sizeof(Vertex)
-                                       : num_vertices * (3 * 4 + 3 * 4 + 3 * 4 + 2 * 4 + 1);
+    uint64_t const vertices_size = num_vertices * vertex_size;
 
     binary_tag(jstream, 0, vertices_size);
     jstream << ",";
@@ -147,24 +153,28 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
         newline(jstream, 4);
         element.semantic_name = "Normal";
         element.stream        = 1;
-        jstream << element << ",";
-
-        newline(jstream, 4);
-        element.semantic_name = "Tangent";
-        element.stream        = 2;
-        jstream << element << ",";
-
-        newline(jstream, 4);
-        element.semantic_name = "Texture_coordinate";
-        element.encoding      = Encoding::Float32x2;
-        element.stream        = 3;
-        jstream << element << ",";
-
-        newline(jstream, 4);
-        element.semantic_name = "Bitangent_sign";
-        element.encoding      = Encoding::UInt8;
-        element.stream        = 4;
         jstream << element;
+
+        if (has_uvs_and_tangents) {
+            jstream << ",";
+
+            newline(jstream, 4);
+            element.semantic_name = "Tangent";
+            element.stream        = 2;
+            jstream << element << ",";
+
+            newline(jstream, 4);
+            element.semantic_name = "Texture_coordinate";
+            element.encoding      = Encoding::Float32x2;
+            element.stream        = 3;
+            jstream << element << ",";
+
+            newline(jstream, 4);
+            element.semantic_name = "Bitangent_sign";
+            element.encoding      = Encoding::UInt8;
+            element.stream        = 4;
+            jstream << element;
+        }
     }
 
     // close layout
@@ -202,12 +212,12 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     size_t index_bytes   = 4;
 
     if (max_index_delta <= 0x000000000000FFFF && std::abs(min_index_delta) <= 0x000000000000FFFF) {
-        if (max_index_delta <= 0x0000000000008000) {
+        if (max_index_delta <= 0x0000000000007FFF) {
             delta_indices = true;
         }
 
         index_bytes = 2;
-    } else if (max_index_delta <= 0x0000000080000000) {
+    } else if (max_index_delta <= 0x000000007FFFFFFF) {
         delta_indices = true;
     }
 
@@ -318,41 +328,44 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
 
         stream.write(reinterpret_cast<char const*>(floats3), num_vertices * sizeof(packed_float3));
 
-        float4 const* tangents = model.tangents();
-        for (uint32_t i = 0; i < num_vertices; ++i) {
-            if (tangents) {
-                floats3[i] = packed_float3(tangents[i].xyz());
-            } else {
-                floats3[i] = packed_float3(0.f);
+        if (has_uvs_and_tangents) {
+            float4 const* tangents = model.tangents();
+            for (uint32_t i = 0; i < num_vertices; ++i) {
+                if (tangents) {
+                    floats3[i] = packed_float3(tangents[i].xyz());
+                } else {
+                    floats3[i] = packed_float3(0.f);
+                }
             }
-        }
 
-        stream.write(reinterpret_cast<char const*>(floats3), num_vertices * sizeof(packed_float3));
+            stream.write(reinterpret_cast<char const*>(floats3),
+                         num_vertices * sizeof(packed_float3));
 
-        float2* floats2 = reinterpret_cast<float2*>(buffer.data());
+            float2* floats2 = reinterpret_cast<float2*>(buffer.data());
 
-        float2 const* uvs = model.texture_coordinates();
-        for (uint32_t i = 0; i < num_vertices; ++i) {
-            if (uvs) {
-                floats2[i] = uvs[i];
-            } else {
-                floats2[i] = float2(0.f);
+            float2 const* uvs = model.texture_coordinates();
+            for (uint32_t i = 0; i < num_vertices; ++i) {
+                if (uvs) {
+                    floats2[i] = uvs[i];
+                } else {
+                    floats2[i] = float2(0.f);
+                }
             }
-        }
 
-        stream.write(reinterpret_cast<char const*>(floats2), num_vertices * sizeof(float2));
+            stream.write(reinterpret_cast<char const*>(floats2), num_vertices * sizeof(float2));
 
-        uint8_t* bytes = reinterpret_cast<uint8_t*>(buffer.data());
+            uint8_t* bytes = reinterpret_cast<uint8_t*>(buffer.data());
 
-        for (uint32_t i = 0; i < num_vertices; ++i) {
-            if (tangents) {
-                bytes[i] = tangents[i][3] < 0.f ? 1 : 0;
-            } else {
-                bytes[i] = 0;
+            for (uint32_t i = 0; i < num_vertices; ++i) {
+                if (tangents) {
+                    bytes[i] = tangents[i][3] < 0.f ? 1 : 0;
+                } else {
+                    bytes[i] = 0;
+                }
             }
-        }
 
-        stream.write(reinterpret_cast<char const*>(bytes), num_vertices * sizeof(uint8_t));
+            stream.write(reinterpret_cast<char const*>(bytes), num_vertices * sizeof(uint8_t));
+        }
     }
 
     uint32_t const* indices = model.indices();
@@ -376,6 +389,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     } else {
         if (delta_indices) {
             int32_t previous_index = 0;
+
             for (uint32_t i = 0; i < num_indices; ++i) {
                 int32_t const a = static_cast<int32_t>(indices[i]);
 

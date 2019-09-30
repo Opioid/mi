@@ -62,11 +62,11 @@ class Model {
 
     float3 const* positions() const noexcept;
 
-    float2 const* texture_coordinates() const noexcept;
-
     float3 const* normals() const noexcept;
 
     float4 const* tangents() const noexcept;
+
+    float2 const* texture_coordinates() const noexcept;
 
     uint32_t const* indices() const noexcept;
 
@@ -78,11 +78,11 @@ class Model {
 
     void allocate_positions() noexcept;
 
-    void allocate_texture_coordinates() noexcept;
-
     void allocate_normals() noexcept;
 
     void allocate_tangents() noexcept;
+
+    void allocate_texture_coordinates() noexcept;
 
     void allocate_indices(uint32_t num_indices) noexcept;
 
@@ -92,11 +92,11 @@ class Model {
 
     void set_position(uint32_t id, float3 const& p) noexcept;
 
-    void set_texture_coordinate(uint32_t id, float2 uv) noexcept;
-
     void set_normal(uint32_t id, float3 const& n) noexcept;
 
     void set_tangent(uint32_t id, float3 const& t, float3 const& b, float3 const& n) noexcept;
+
+    void set_texture_coordinate(uint32_t id, float2 uv) noexcept;
 
     void set_index(uint32_t id, uint32_t index) noexcept;
 
@@ -123,11 +123,11 @@ class Model {
 
     float3* positions_ = nullptr;
 
-    float2* texture_coordinates_ = nullptr;
-
     float3* normals_ = nullptr;
 
     float4* tangents_and_bitangent_signs_ = nullptr;
+
+    float2* texture_coordinates_ = nullptr;
 
     uint32_t* indices_;
 };
