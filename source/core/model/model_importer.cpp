@@ -192,9 +192,9 @@ void Importer::guess_light_nodes(std::string const&          name,
     std::set<uint32_t> emissive_materials;
 
     for (uint32_t i = 0, len = scene->mNumMaterials; i < len; ++i) {
-        std::string name = scene->mMaterials[i]->GetName().C_Str();
+        std::string const material_name = scene->mMaterials[i]->GetName().C_Str();
 
-        if (std::string::npos != name.find("Emissive")) {
+        if (std::string::npos != material_name.find("Emissive")) {
             emissive_materials.insert(i);
         }
     }
