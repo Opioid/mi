@@ -94,7 +94,7 @@ struct alignas(16) Vector3f_a {
 
     constexpr Vector3f_a(float const* a) noexcept;
 
-    explicit constexpr Vector3f_a(float s) noexcept;
+    explicit constexpr Vector3f_a(float s) noexcept : v{s, s, s, 0.f} {}
 
     explicit constexpr Vector3f_a(Vector2<float> const xy, float z = 0.f) noexcept;
 

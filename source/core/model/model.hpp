@@ -3,7 +3,7 @@
 
 #include "base/flags/flags.hpp"
 #include "base/math/aabb.hpp"
-#include "base/math/vector.hpp"
+#include "base/math/vector3.hpp"
 
 #include <cstdint>
 #include <string>
