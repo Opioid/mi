@@ -10,6 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # On Linux this should give -fPIC/fPIE
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+set(BUILD_SHARED_LIBS OFF)
+
 if (${NAN})
 	add_definitions(-DSU_DEBUG)
 endif ()
@@ -35,9 +37,6 @@ if (LINUX)
 	# add_compile_options(-Wuseless-cast)
 	# add_compile_options(-Wshadow)
 elseif (MSVC)
-	# set(CMAKE_CXX_STANDARD 17) doesn't seem to work for visual studio target at the moment
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-
 	# Force to always compile with W4
 	if (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
 		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -65,7 +64,11 @@ elseif (MSVC)
     add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
 endif ()
 
+add_definitions(-DASSIMP_BUILD_NO_EXPORT)
+
 add_subdirectory(../assimp ${CMAKE_BINARY_DIR}/assimp)
+
+SET (ASSIMP_BUILD_TESTS CACHE BOOL OFF)
 
 add_subdirectory(base)
 add_subdirectory(core)
