@@ -1,5 +1,6 @@
 #include "options.hpp"
 
+#include <assimp/version.h>
 #include <cctype>
 #include <iostream>
 
@@ -108,7 +109,7 @@ bool is_parameter(std::string_view text) noexcept {
 }
 
 void help() noexcept {
-    static std::string const text =
+    static std::string const usage =
         R"(mi is a model importer
 Usage:
   it [OPTION...]
@@ -121,7 +122,12 @@ Usage:
       --reverse-[xz]   Reverse the specified axis of the model's vertices.
   -s, --scale  float   Scalar (> 0) to uniformly scale the model by.)";
 
-    std::cout << text << std::endl;
+    std::cout << usage << "\n\n";
+
+    std::cout << "Dependencies:\n";
+
+    std::cout << "  Assimp " << aiGetVersionMajor() << "." << aiGetVersionMinor() << "."
+              << aiGetVersionRevision() << std::endl;
 }
 
 }  // namespace options
