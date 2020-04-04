@@ -3,6 +3,7 @@
 
 #include "base/flags/flags.hpp"
 #include "base/math/aabb.hpp"
+#include "base/math/quaternion.hpp"
 #include "base/math/vector3.hpp"
 
 #include <cstdint>
@@ -107,6 +108,8 @@ class Model {
     void set_origin(Origin origin) noexcept;
 
     AABB aabb() const noexcept;
+
+    static Quaternion tangent_space(float3 const& t, float3 const& n, float bitangent_sign);
 
   private:
     uint32_t num_parts_ = 0;

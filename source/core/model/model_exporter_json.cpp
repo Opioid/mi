@@ -93,43 +93,24 @@ bool Exporter_json::write(std::string const& name, Model const& model) const noe
         stream << "\n\t\t\t],\n\n";
     }
 
-    // Normals
-    if (float3 const* normals = model.normals(); normals) {
-        stream << "\t\t\t\"normals\": [\n";
+    static bool constexpr tangent_space_as_quaternion = true;
+
+    float3 const* normals  = model.normals();
+    float4 const* tangents = model.tangents();
+
+    if (tangent_space_as_quaternion && normals && tangents) {
+        // Tangent space
+        stream << "\t\t\t\"tangent_space\": [\n";
 
         stream << "\t\t\t\t";
 
         for (uint32_t i = 0, len = model.num_vertices(); i < len; ++i) {
-            stream << normals[i][0] << "," << normals[i][1] << "," << normals[i][2];
+            float4 const t = tangents[i];
+            float3 const n = normals[i];
 
-            if (i < len - 1) {
-                stream << ",";
-            }
+            Quaternion const ts = Model::tangent_space(t.xyz(), n, t[3]);
 
-            if ((i + 1) % 8 == 0) {
-                stream << "\n\t\t\t\t";
-            }
-        }
-
-        stream << "\n\t\t\t]";
-
-        if (model.tangents()) {
-            stream << ",";
-        }
-
-        stream << "\n\n";
-    }
-
-    // Tangent Space
-    if (float4 const* tangents = model.tangents(); tangents) {
-        // Tangents
-        stream << "\t\t\t\"tangents_and_bitangent_signs\": [\n";
-
-        stream << "\t\t\t\t";
-
-        for (uint32_t i = 0, len = model.num_vertices(); i < len; ++i) {
-            stream << tangents[i][0] << "," << tangents[i][1] << "," << tangents[i][2] << ","
-                   << tangents[i][3];
+            stream << ts[0] << "," << ts[1] << "," << ts[2] << "," << ts[3];
 
             if (i < len - 1) {
                 stream << ",";
@@ -141,6 +122,55 @@ bool Exporter_json::write(std::string const& name, Model const& model) const noe
         }
 
         stream << "\n\t\t\t]\n\n";
+    } else {
+        // Normals
+        if (normals) {
+            stream << "\t\t\t\"normals\": [\n";
+
+            stream << "\t\t\t\t";
+
+            for (uint32_t i = 0, len = model.num_vertices(); i < len; ++i) {
+                stream << normals[i][0] << "," << normals[i][1] << "," << normals[i][2];
+
+                if (i < len - 1) {
+                    stream << ",";
+                }
+
+                if ((i + 1) % 8 == 0) {
+                    stream << "\n\t\t\t\t";
+                }
+            }
+
+            stream << "\n\t\t\t]";
+
+            if (model.tangents()) {
+                stream << ",";
+            }
+
+            stream << "\n\n";
+        }
+
+        // Tangents
+        if (tangents) {
+            stream << "\t\t\t\"tangents_and_bitangent_signs\": [\n";
+
+            stream << "\t\t\t\t";
+
+            for (uint32_t i = 0, len = model.num_vertices(); i < len; ++i) {
+                stream << tangents[i][0] << "," << tangents[i][1] << "," << tangents[i][2] << ","
+                       << tangents[i][3];
+
+                if (i < len - 1) {
+                    stream << ",";
+                }
+
+                if ((i + 1) % 8 == 0) {
+                    stream << "\n\t\t\t\t";
+                }
+            }
+
+            stream << "\n\t\t\t]\n\n";
+        }
     }
 
     stream << "\t\t},\n\n";

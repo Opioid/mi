@@ -1,5 +1,6 @@
 #include "model.hpp"
 #include "base/math/aabb.inl"
+#include "base/math/quaternion.inl"
 #include "base/math/vector4.inl"
 
 #include <assimp/scene.h>
@@ -275,6 +276,34 @@ AABB Model::aabb() const noexcept {
     }
 
     return box;
+}
+
+Quaternion Model::tangent_space(float3 const& t, float3 const& n, float bitangent_sign) {
+    float3 const b = cross(n, t);
+
+    float3x3 const tbn(t, b, n);
+
+    Quaternion q = quaternion::create(tbn);
+
+    static float constexpr threshold   = 0.000001f;
+    static float const renormalization = std::sqrt(1.f - threshold * threshold);
+
+    if (std::abs(q[3]) < threshold) {
+        q[0] *= renormalization;
+        q[1] *= renormalization;
+        q[2] *= renormalization;
+        q[3] = q[3] < 0.f ? -threshold : threshold;
+    }
+
+    if (q[3] < 0.f) {
+        q = -q;
+    }
+
+    if (bitangent_sign < 0.f) {
+        q[3] = -q[3];
+    }
+
+    return q;
 }
 
 }  // namespace model
