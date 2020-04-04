@@ -4,7 +4,8 @@
 #include "core/model/model.hpp"
 #include "core/model/model_exporter_json.hpp"
 #include "core/model/model_exporter_sub.hpp"
-#include "core/model/model_importer.hpp"
+#include "core/model/model_importer_assimp.hpp"
+#include "core/model/model_importer_json.hpp"
 #include "options/options.hpp"
 
 #include <iostream>
@@ -24,9 +25,17 @@ int main(int argc, char* argv[]) noexcept {
         return 0;
     }
 
-    model::Importer importer;
+    model::Model* model = nullptr;
 
-    model::Model* model = importer.read(args.input);
+    if ("json" == suffix(args.input)) {
+        model::Importer_json importer;
+
+        model = importer.read(args.input);
+    } else {
+        model::Importer_assimp importer;
+
+        model = importer.read(args.input);
+    }
 
     if (!model) {
         return 0;

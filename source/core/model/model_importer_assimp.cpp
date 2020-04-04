@@ -1,10 +1,11 @@
-#include "model_importer.hpp"
+#include "model_importer_assimp.hpp"
 #include "base/math/vector3.inl"
 #include "base/memory/align.hpp"
 #include "model.hpp"
 
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
+#include "assimp/postprocess.h"
+#include "assimp/scene.h"
+
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -14,7 +15,7 @@ namespace model {
 
 static inline float3 aiVector3_to_float3(aiVector3D const& v) noexcept;
 
-Model* Importer::read(std::string const& name) noexcept {
+Model* Importer_assimp::read(std::string const& name) noexcept {
     //    std::vector<aiNode const*> nodes;
     //    guess_light_nodes(name, nodes);
 
@@ -181,8 +182,8 @@ void gather_nodes(aiNode const* node, aiScene const* scene, std::set<uint32_t> c
     }
 }
 
-void Importer::guess_light_nodes(std::string const&          name,
-                                 std::vector<aiNode const*>& nodes) noexcept {
+void Importer_assimp::guess_light_nodes(std::string const&          name,
+                                        std::vector<aiNode const*>& nodes) noexcept {
     aiScene const* scene = importer_.ReadFile(name, 0);
 
     if (!scene) {

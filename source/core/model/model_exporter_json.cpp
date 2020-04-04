@@ -3,6 +3,10 @@
 #include "base/math/vector4.inl"
 #include "model.hpp"
 
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/ostreamwrapper.h"
+#include "rapidjson/prettywriter.h"
+
 #include <fstream>
 
 namespace model {
@@ -13,6 +17,85 @@ bool Exporter_json::write(std::string const& name, Model const& model) const noe
     if (!stream) {
         return false;
     }
+
+    /*
+    rapidjson::OStreamWrapper json_stream(stream);
+
+    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(json_stream);
+
+    writer.SetFormatOptions(rapidjson::kFormatSingleLineArray);
+    writer.SetMaxDecimalPlaces(6);
+
+    writer.StartObject();
+
+    writer.Key("geometry");
+    writer.StartObject();
+
+    // Parts
+    writer.Key("parts");
+    writer.StartArray();
+
+    Model::Part const* parts = model.parts();
+    for (uint32_t i = 0, len = model.num_parts(); i < len; ++i) {
+        writer.StartObject();
+
+        writer.Key("material_index");
+        writer.Uint(parts[i].material_index);
+
+        writer.Key("start_index");
+        writer.Uint(parts[i].start_index);
+
+        writer.Key("num_indices");
+        writer.Uint(parts[i].num_indices);
+
+        writer.EndObject();
+    }
+
+    writer.EndArray();
+
+    // Primitive Topology
+    writer.Key("primitive_topology");
+    writer.String("triangle_list");
+
+    // Vertices
+    {
+    writer.Key("vertices");
+    writer.StartObject();
+
+    // Positions
+    if (float3 const* positions = model.positions(); positions) {
+        writer.Key("positions");
+        writer.StartArray();
+
+        for (uint32_t i = 0, len = model.num_vertices(); i < len; ++i) {
+            writer.Double(positions[i][0]);
+            writer.Double(positions[i][1]);
+            writer.Double(positions[i][2]);
+        }
+
+        writer.EndArray();
+    }
+
+    // Texture_2D Coordinates
+    if (float2 const* uvs = model.texture_coordinates(); uvs) {
+        writer.Key("texture_coordinates_0");
+        writer.StartArray();
+
+        for (uint32_t i = 0, len = model.num_vertices(); i < len; ++i) {
+            writer.Double(uvs[i][0]);
+            writer.Double(uvs[i][1]);
+        }
+
+        writer.EndArray();
+    }
+
+    writer.EndObject();
+    }
+
+    writer.EndObject();
+
+    writer.EndObject();
+    */
 
     stream << "{\n";
 
@@ -221,6 +304,12 @@ static void put_texture(std::ofstream& stream, std::string_view usage, std::stri
 }
 
 bool Exporter_json::write_materials(std::string const& name, Model const& model) const noexcept {
+    auto const* materials = model.materials();
+
+    if (!materials) {
+        return true;
+    }
+
     std::ofstream stream(name + ".materials.json");
 
     if (!stream) {
@@ -230,8 +319,6 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
     stream << "{\n";
 
     stream << "\t\"materials\": [\n\t\t";
-
-    auto const* materials = model.materials();
 
     for (uint32_t i = 0, len = model.num_materials(); i < len; ++i) {
         auto const& m = materials[i];
