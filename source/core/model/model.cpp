@@ -202,18 +202,26 @@ void Model::scale(float3 const& s) noexcept {
     }
 }
 
-void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
-    if (transformtions.empty()) {
+void Model::transform(flags::Flags<Transformation> transformations) noexcept {
+    if (transformations.empty()) {
         return;
     }
 
     if (positions_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
-            if (transformtions.is(Transformation::Reverse_X)) {
+            if (transformations.is(Transformation::Swap_YZ)) {
+                std::swap(positions_[i][1], positions_[i][2]);
+            }
+
+            if (transformations.is(Transformation::Reverse_X)) {
                 positions_[i][0] = -positions_[i][0];
             }
 
-            if (transformtions.is(Transformation::Reverse_Z)) {
+            if (transformations.is(Transformation::Reverse_Y)) {
+                positions_[i][1] = -positions_[i][1];
+            }
+
+            if (transformations.is(Transformation::Reverse_Z)) {
                 positions_[i][2] = -positions_[i][2];
             }
         }
@@ -221,11 +229,19 @@ void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
 
     if (normals_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
-            if (transformtions.is(Transformation::Reverse_X)) {
+            if (transformations.is(Transformation::Swap_YZ)) {
+                std::swap(normals_[i][1], normals_[i][2]);
+            }
+
+            if (transformations.is(Transformation::Reverse_X)) {
                 normals_[i][0] = -normals_[i][0];
             }
 
-            if (transformtions.is(Transformation::Reverse_Z)) {
+            if (transformations.is(Transformation::Reverse_Y)) {
+                normals_[i][1] = -normals_[i][1];
+            }
+
+            if (transformations.is(Transformation::Reverse_Z)) {
                 normals_[i][2] = -normals_[i][2];
             }
         }
@@ -233,20 +249,30 @@ void Model::transform(flags::Flags<Transformation> transformtions) noexcept {
 
     if (tangents_and_bitangent_signs_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
-            if (transformtions.is(Transformation::Reverse_X)) {
+            if (transformations.is(Transformation::Swap_YZ)) {
+                std::swap(tangents_and_bitangent_signs_[i][1], tangents_and_bitangent_signs_[i][2]);
+            }
+
+            if (transformations.is(Transformation::Reverse_X)) {
                 tangents_and_bitangent_signs_[i][0] = -tangents_and_bitangent_signs_[i][0];
             }
 
-            if (transformtions.is(Transformation::Reverse_Z)) {
+            if (transformations.is(Transformation::Reverse_Y)) {
+                tangents_and_bitangent_signs_[i][1] = -tangents_and_bitangent_signs_[i][1];
+            }
+
+            if (transformations.is(Transformation::Reverse_Z)) {
                 tangents_and_bitangent_signs_[i][2] = -tangents_and_bitangent_signs_[i][2];
             }
         }
     }
 
-    if ((transformtions.is(Transformation::Reverse_X) &&
-         transformtions.no(Transformation::Reverse_Z)) ||
-        (transformtions.is(Transformation::Reverse_Z) &&
-         transformtions.no(Transformation::Reverse_X))) {
+    if ((transformations.is(Transformation::Swap_YZ) &&
+         transformations.no(Transformation::Reverse_Y)) ||
+        (transformations.is(Transformation::Reverse_X) &&
+         transformations.no(Transformation::Reverse_Z)) ||
+        (transformations.is(Transformation::Reverse_Z) &&
+         transformations.no(Transformation::Reverse_X))) {
         for (uint32_t i = 0, len = num_indices_; i < len; i += 3) {
             std::swap(indices_[i + 1], indices_[i + 2]);
         }

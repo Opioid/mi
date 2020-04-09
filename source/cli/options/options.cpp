@@ -74,6 +74,8 @@ bool handle(std::string const& command, std::string const& parameter, Options& r
         result.origin = Model::Origin::Center_bottom;
     } else if ("reverse-x" == command) {
         result.transformations.set(Model::Transformation::Reverse_X);
+    } else if ("reverse-y" == command) {
+        result.transformations.set(Model::Transformation::Reverse_Y);
     } else if ("reverse-z" == command) {
         result.transformations.set(Model::Transformation::Reverse_Z);
     } else if ("reverse-xz" == command || "reverse-zx" == command) {
@@ -81,6 +83,8 @@ bool handle(std::string const& command, std::string const& parameter, Options& r
         result.transformations.set(Model::Transformation::Reverse_Z);
     } else if ("scale" == command || "s" == command) {
         result.scale = float(std::atof(parameter.data()));
+    } else if ("swap-yz" == command || "swap-zy" == command) {
+        result.transformations.set(Model::Transformation::Swap_YZ);
     } else {
         std::cout << "Option " << command << " does not exist.";
     }

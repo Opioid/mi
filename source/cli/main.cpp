@@ -73,11 +73,11 @@ int main(int argc, char* argv[]) noexcept {
 
     model::Exporter_json exporter;
 
-    if (ext.empty() || "json" == ext) {
-        exporter.write(out, *model);
-    } else if ("sub" == ext) {
+    if (ext.empty() || "sub" == ext) {
         model::Exporter_sub exporter_sub;
         exporter_sub.write(out, *model);
+    } else if ("json" == ext) {
+        exporter.write(out, *model);
     }
 
     exporter.write_materials(out, *model);
