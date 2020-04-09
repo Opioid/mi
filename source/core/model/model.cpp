@@ -1,5 +1,6 @@
 #include "model.hpp"
 #include "base/math/aabb.inl"
+#include "base/math/quaternion.inl"
 #include "base/math/vector4.inl"
 
 #include <assimp/scene.h>
@@ -184,6 +185,13 @@ void Model::set_tangent(uint32_t id, float3 const& t, float3 const& b, float3 co
     tangents_and_bitangent_signs_[id] = float4(t, s > 0.f ? 1.f : -1.f);
 }
 
+void Model::set_tangent(uint32_t id, float3 const& t, float3 const& n,
+                        float bitangent_sign) noexcept {
+    normals_[id] = n;
+
+    tangents_and_bitangent_signs_[id] = float4(t, bitangent_sign);
+}
+
 void Model::set_index(uint32_t id, uint32_t index) noexcept {
     indices_[id] = index;
 }
@@ -275,6 +283,34 @@ AABB Model::aabb() const noexcept {
     }
 
     return box;
+}
+
+Quaternion Model::tangent_space(float3 const& t, float3 const& n, float bitangent_sign) {
+    float3 const b = cross(n, t);
+
+    float3x3 const tbn(t, b, n);
+
+    Quaternion q = quaternion::create(tbn);
+
+    static float constexpr threshold   = 0.000001f;
+    static float const renormalization = std::sqrt(1.f - threshold * threshold);
+
+    if (std::abs(q[3]) < threshold) {
+        q[0] *= renormalization;
+        q[1] *= renormalization;
+        q[2] *= renormalization;
+        q[3] = q[3] < 0.f ? -threshold : threshold;
+    }
+
+    if (q[3] < 0.f) {
+        q = -q;
+    }
+
+    if (bitangent_sign < 0.f) {
+        q[3] = -q[3];
+    }
+
+    return q;
 }
 
 }  // namespace model

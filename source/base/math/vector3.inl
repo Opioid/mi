@@ -325,8 +325,6 @@ static bool any_inf(Vector3<T> const& v) noexcept {
 
 inline constexpr Vector3f_a::Vector3f_a(float const* a) noexcept : v{a[0], a[1], a[2], 0.f} {}
 
-inline constexpr Vector3f_a::Vector3f_a(float s) noexcept : v{s, s, s, 0.f} {}
-
 inline constexpr Vector3f_a::Vector3f_a(Vector2<float> const xy, float z) noexcept
     : v{xy[0], xy[1], z, 0.f} {}
 

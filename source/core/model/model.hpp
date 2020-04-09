@@ -3,7 +3,8 @@
 
 #include "base/flags/flags.hpp"
 #include "base/math/aabb.hpp"
-#include "base/math/vector.hpp"
+#include "base/math/quaternion.hpp"
+#include "base/math/vector3.hpp"
 
 #include <cstdint>
 #include <string>
@@ -96,6 +97,8 @@ class Model {
 
     void set_tangent(uint32_t id, float3 const& t, float3 const& b, float3 const& n) noexcept;
 
+    void set_tangent(uint32_t id, float3 const& t, float3 const& n, float bitangent_sign) noexcept;
+
     void set_texture_coordinate(uint32_t id, float2 uv) noexcept;
 
     void set_index(uint32_t id, uint32_t index) noexcept;
@@ -107,6 +110,8 @@ class Model {
     void set_origin(Origin origin) noexcept;
 
     AABB aabb() const noexcept;
+
+    static Quaternion tangent_space(float3 const& t, float3 const& n, float bitangent_sign);
 
   private:
     uint32_t num_parts_ = 0;
