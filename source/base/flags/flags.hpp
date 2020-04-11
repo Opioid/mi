@@ -33,6 +33,10 @@ struct Flags {
         return 0 != (values & (impl_type(a) | impl_type(b) | impl_type(c)));
     }
 
+    constexpr bool operator==(Flags other) const {
+        return values == other.values;
+    }
+
     constexpr bool operator!=(Flags other) const {
         return values != other.values;
     }

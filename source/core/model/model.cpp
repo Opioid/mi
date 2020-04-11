@@ -207,6 +207,11 @@ void Model::transform(flags::Flags<Transformation> transformations) noexcept {
         return;
     }
 
+    bool const single_transformation = transformations == Transformation::Swap_YZ ||
+                                       transformations == Transformation::Reverse_X ||
+                                       transformations == Transformation::Reverse_Y ||
+                                       transformations == Transformation::Reverse_Z;
+
     if (positions_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
             if (transformations.is(Transformation::Swap_YZ)) {
@@ -264,15 +269,14 @@ void Model::transform(flags::Flags<Transformation> transformations) noexcept {
             if (transformations.is(Transformation::Reverse_Z)) {
                 tangents_and_bitangent_signs_[i][2] = -tangents_and_bitangent_signs_[i][2];
             }
+
+            if (single_transformation) {
+                tangents_and_bitangent_signs_[i][3] = -tangents_and_bitangent_signs_[i][3];
+            }
         }
     }
 
-    if ((transformations.is(Transformation::Swap_YZ) &&
-         transformations.no(Transformation::Reverse_Y)) ||
-        (transformations.is(Transformation::Reverse_X) &&
-         transformations.no(Transformation::Reverse_Z)) ||
-        (transformations.is(Transformation::Reverse_Z) &&
-         transformations.no(Transformation::Reverse_X))) {
+    if (single_transformation) {
         for (uint32_t i = 0, len = num_indices_; i < len; i += 3) {
             std::swap(indices_[i + 1], indices_[i + 2]);
         }

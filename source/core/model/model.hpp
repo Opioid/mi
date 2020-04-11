@@ -15,10 +15,11 @@ namespace model {
 class Model {
   public:
     enum class Transformation {
-        Reverse_X = 1 << 0,
-        Reverse_Y = 1 << 1,
-        Reverse_Z = 1 << 2,
-        Swap_YZ   = 1 << 3
+        Swap_YZ   = 1 << 0,
+        Reverse_X = 1 << 1,
+        Reverse_Y = 1 << 2,
+        Reverse_Z = 1 << 3
+
     };
 
     enum class Origin { Default = 0, Center_bottom };
