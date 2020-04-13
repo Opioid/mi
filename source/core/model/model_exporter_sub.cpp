@@ -5,7 +5,6 @@
 #include "rapidjson/prettywriter.h"
 
 #include <fstream>
-#include <sstream>
 
 namespace model {
 
@@ -52,7 +51,7 @@ static std::string to_string(Vertex_layout_description::Encoding const& encoding
     }
 }
 
-template<class Writer>
+template <class Writer>
 static void write(Writer& writer, Vertex_layout_description::Element const& element) {
     writer.StartObject();
 
@@ -74,24 +73,13 @@ static void write(Writer& writer, Vertex_layout_description::Element const& elem
     writer.EndObject();
 }
 
-std::stringstream& operator<<(std::stringstream&                        stream,
-                              Vertex_layout_description::Element const& element);
-
-static void newline(std::ostream& stream, uint32_t num_tabs) noexcept {
-    stream << std::endl;
-
-    for (uint32_t i = 0; i < num_tabs; ++i) {
-        stream << '\t';
-    }
-}
-
-template<class Writer>
-static void tbinary_tag(Writer& writer, uint64_t offset, uint64_t size) noexcept {
+template <class Writer>
+static void binary_tag(Writer& writer, uint64_t offset, uint64_t size) noexcept {
     writer.Key("binary");
     writer.StartObject();
 
-//    writer.Key("index");
-//    writer.Uint(0);
+    //    writer.Key("index");
+    //    writer.Uint(0);
 
     writer.Key("offset");
     writer.Uint64(offset);
@@ -102,10 +90,6 @@ static void tbinary_tag(Writer& writer, uint64_t offset, uint64_t size) noexcept
     writer.EndObject();
 }
 
-static void binary_tag(std::ostream& stream, uint64_t offset, uint64_t size) noexcept {
-    stream << "\"binary\":{\"offset\":" << offset << ",\"size\":" << size << "}";
-}
-
 bool Exporter_sub::write(std::string const& name, Model const& model) const noexcept {
     std::ofstream stream(name + ".sub", std::ios::binary);
 
@@ -113,241 +97,8 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
         return false;
     }
 
-    std::stringstream jstream;
-
-    newline(jstream, 0);
-    jstream << "{";
-
-    newline(jstream, 1);
-    jstream << "\"geometry\":{";
-
-    newline(jstream, 2);
-    jstream << "\"parts\":[";
-
-    Model::Part const* parts = model.parts();
-    for (uint32_t i = 0, len = model.num_parts(); i < len; ++i) {
-        newline(jstream, 3);
-
-        auto const& p = parts[i];
-        jstream << "{";
-        jstream << "\"start_index\":" << p.start_index << ",";
-        jstream << "\"num_indices\":" << p.num_indices << ",";
-        jstream << "\"material_index\":" << p.material_index;
-        jstream << "}";
-
-        if (i < len - 1) {
-            jstream << ",";
-        }
-    }
-
-    // close parts
-    newline(jstream, 2);
-    jstream << "],";
-
-    // vertices
-    newline(jstream, 2);
-    jstream << "\"vertices\":{";
-
-    newline(jstream, 3);
-
-    static bool constexpr tangent_space_as_quaternion = true;
-    static bool constexpr interleaved_vertex_stream   = false;
-
-    bool const has_uvs_and_tangents = nullptr != model.texture_coordinates() &&
-                                      nullptr != model.tangents();
-
-    uint64_t vertex_size = 0;
-
-    if (interleaved_vertex_stream) {
-        vertex_size = sizeof(Vertex);
-    } else {
-        if (tangent_space_as_quaternion) {
-            vertex_size = (3 * 4 + 4 * 4 + 4 * 2);
-        } else {
-            vertex_size = has_uvs_and_tangents ? (3 * 4 + 3 * 4 + 3 * 4 + 2 * 4 + 1)
-                                               : (3 * 4 + 3 * 4);
-        }
-    }
-
-    uint64_t const num_vertices  = model.num_vertices();
-    uint64_t const vertices_size = num_vertices * vertex_size;
-
-    binary_tag(jstream, 0, vertices_size);
-    jstream << ",";
-
-    newline(jstream, 3);
-    jstream << "\"num_vertices\":" << num_vertices << ",";
-
-    newline(jstream, 3);
-    jstream << "\"layout\":[";
-
-    Vertex_layout_description::Element element;
-
-    using Encoding = Vertex_layout_description::Encoding;
-
-    if (interleaved_vertex_stream) {
-        newline(jstream, 4);
-        element.semantic_name = "Position";
-        element.encoding      = Encoding::Float32x3;
-        jstream << element << ",";
-
-        newline(jstream, 4);
-        element.semantic_name = "Normal";
-        element.byte_offset   = 12;
-        jstream << element << ",";
-
-        newline(jstream, 4);
-        element.semantic_name = "Tangent";
-        element.byte_offset   = 24;
-        jstream << element << ",";
-
-        newline(jstream, 4);
-        element.semantic_name = "Texture_coordinate";
-        element.encoding      = Encoding::Float32x2;
-        element.byte_offset   = 36;
-        jstream << element << ",";
-
-        newline(jstream, 4);
-        element.semantic_name = "Bitangent_sign";
-        element.encoding      = Encoding::UInt8;
-        element.byte_offset   = 44;
-        jstream << element;
-    } else {
-        newline(jstream, 4);
-        element.semantic_name = "Position";
-        element.encoding      = Encoding::Float32x3;
-        element.stream        = 0;
-        jstream << element << ",";
-
-        if (tangent_space_as_quaternion && has_uvs_and_tangents) {
-            newline(jstream, 4);
-            element.semantic_name = "Tangent_space";
-            element.encoding      = Encoding::Float32x4;
-            element.stream        = 1;
-            jstream << element << ",";
-
-            newline(jstream, 4);
-            element.semantic_name = "Texture_coordinate";
-            element.encoding      = Encoding::Float32x2;
-            element.stream        = 2;
-            jstream << element;
-
-        } else {
-            newline(jstream, 4);
-            element.semantic_name = "Normal";
-            element.stream        = 1;
-            jstream << element;
-
-            if (has_uvs_and_tangents) {
-                jstream << ",";
-
-                newline(jstream, 4);
-                element.semantic_name = "Tangent";
-                element.stream        = 2;
-                jstream << element << ",";
-
-                newline(jstream, 4);
-                element.semantic_name = "Texture_coordinate";
-                element.encoding      = Encoding::Float32x2;
-                element.stream        = 3;
-                jstream << element << ",";
-
-                newline(jstream, 4);
-                element.semantic_name = "Bitangent_sign";
-                element.encoding      = Encoding::UInt8;
-                element.stream        = 4;
-                jstream << element;
-            }
-        }
-    }
-
-    // close layout
-    newline(jstream, 3);
-    jstream << "]";
-
-    // close vertices
-    newline(jstream, 2);
-    jstream << "},";
-
-    // indices
-    newline(jstream, 2);
-    jstream << "\"indices\":{";
-
-    int64_t max_index_delta = 0;
-    int64_t min_index_delta = 0;
-
-    {
-        int64_t previous_index = 0;
-
-        uint32_t const* indices = model.indices();
-        for (uint32_t i = 0, len = model.num_indices(); i < len; ++i) {
-            int64_t const si = int64_t(indices[i]);
-
-            int64_t const delta_index = si - previous_index;
-
-            max_index_delta = std::max(delta_index, max_index_delta);
-            min_index_delta = std::min(delta_index, min_index_delta);
-
-            previous_index = si;
-        }
-    }
-
-    bool   delta_indices = false;
-    size_t index_bytes   = 4;
-
-    if (max_index_delta <= 0x000000000000FFFF && std::abs(min_index_delta) <= 0x000000000000FFFF) {
-        if (max_index_delta <= 0x0000000000007FFF) {
-            delta_indices = true;
-        }
-
-        index_bytes = 2;
-    } else if (max_index_delta <= 0x000000007FFFFFFF) {
-        delta_indices = true;
-    }
-
-    newline(jstream, 3);
-    uint64_t const num_indices = model.num_indices();
-    binary_tag(jstream, vertices_size, num_indices * index_bytes);
-    jstream << ",";
-
-    newline(jstream, 3);
-    jstream << "\"num_indices\":" << num_indices << ",";
-
-    newline(jstream, 3);
-    jstream << "\"encoding\":";
-
-    if (4 == index_bytes) {
-        if (delta_indices) {
-            jstream << "\"Int32\"";
-        } else {
-            jstream << "\"UInt32\"";
-        }
-    } else {
-        if (delta_indices) {
-            jstream << "\"Int16\"";
-        } else {
-            jstream << "\"UInt16\"";
-        }
-    }
-
-    // close indices
-    newline(jstream, 2);
-    jstream << "}";
-
-    // close geometry
-    newline(jstream, 1);
-    jstream << "}";
-
-    // close start
-    newline(jstream, 0);
-    jstream << "}";
-
-    newline(jstream, 0);
-
-
-    {
-
     rapidjson::StringBuffer sb;
+
     rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
 
     writer.StartObject();
@@ -403,7 +154,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     uint64_t const num_vertices  = model.num_vertices();
     uint64_t const vertices_size = num_vertices * vertex_size;
 
-    tbinary_tag(writer, 0, vertices_size);
+    binary_tag(writer, 0, vertices_size);
 
     writer.Key("num_vertices");
     writer.Uint64(num_vertices);
@@ -411,132 +162,133 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     writer.Key("layout");
     writer.StartArray();
 
-        Vertex_layout_description::Element element;
+    Vertex_layout_description::Element element;
 
-        using Encoding = Vertex_layout_description::Encoding;
+    using Encoding = Vertex_layout_description::Encoding;
 
-            element.semantic_name = "Position";
-            element.encoding      = Encoding::Float32x3;
-            element.stream        = 0;
+    element.semantic_name = "Position";
+    element.encoding      = Encoding::Float32x3;
+    element.stream        = 0;
+    model::write(writer, element);
+
+    if (tangent_space_as_quaternion && has_uvs_and_tangents) {
+        element.semantic_name = "Tangent_space";
+        element.encoding      = Encoding::Float32x4;
+        element.stream        = 1;
+        model::write(writer, element);
+
+        element.semantic_name = "Texture_coordinate";
+        element.encoding      = Encoding::Float32x2;
+        element.stream        = 2;
+        model::write(writer, element);
+
+    } else {
+        element.semantic_name = "Normal";
+        element.stream        = 1;
+        model::write(writer, element);
+
+        if (has_uvs_and_tangents) {
+            element.semantic_name = "Tangent";
+            element.stream        = 2;
             model::write(writer, element);
 
-            if (tangent_space_as_quaternion && has_uvs_and_tangents) {
-                element.semantic_name = "Tangent_space";
-                element.encoding      = Encoding::Float32x4;
-                element.stream        = 1;
-                model::write(writer, element);
+            element.semantic_name = "Texture_coordinate";
+            element.encoding      = Encoding::Float32x2;
+            element.stream        = 3;
+            model::write(writer, element);
 
+            element.semantic_name = "Bitangent_sign";
+            element.encoding      = Encoding::UInt8;
+            element.stream        = 4;
+            model::write(writer, element);
+        }
+    }
 
-                element.semantic_name = "Texture_coordinate";
-                element.encoding      = Encoding::Float32x2;
-                element.stream        = 2;
-                model::write(writer, element);
+    writer.EndArray();
 
-            } else {
-                element.semantic_name = "Normal";
-                element.stream        = 1;
-                model::write(writer, element);
+    // close vertices
+    writer.EndObject();
 
-                if (has_uvs_and_tangents) {
+    // Indices
+    writer.Key("indices");
+    writer.StartObject();
 
-                    element.semantic_name = "Tangent";
-                    element.stream        = 2;
-                    model::write(writer, element);
+    int64_t max_index_delta = 0;
+    int64_t min_index_delta = 0;
 
-                    element.semantic_name = "Texture_coordinate";
-                    element.encoding      = Encoding::Float32x2;
-                    element.stream        = 3;
-                    model::write(writer, element);
+    {
+        int64_t previous_index = 0;
 
-                    element.semantic_name = "Bitangent_sign";
-                    element.encoding      = Encoding::UInt8;
-                    element.stream        = 4;
-                    model::write(writer, element);
-                }
-            }
+        uint32_t const* indices = model.indices();
+        for (uint32_t i = 0, len = model.num_indices(); i < len; ++i) {
+            int64_t const si = int64_t(indices[i]);
 
-            writer.EndArray();
+            int64_t const delta_index = si - previous_index;
 
-            // close vertices
-            writer.EndObject();
+            max_index_delta = std::max(delta_index, max_index_delta);
+            min_index_delta = std::min(delta_index, min_index_delta);
 
-        // Indices
-        writer.Key("indices");
-        writer.StartObject();
+            previous_index = si;
+        }
+    }
 
-        int64_t max_index_delta = 0;
-            int64_t min_index_delta = 0;
+    bool   delta_indices = false;
+    size_t index_bytes   = 4;
 
-            {
-                int64_t previous_index = 0;
+    if (max_index_delta <= 0x000000000000FFFF && std::abs(min_index_delta) <= 0x000000000000FFFF) {
+        if (max_index_delta <= 0x0000000000007FFF) {
+            delta_indices = true;
+        }
 
-                uint32_t const* indices = model.indices();
-                for (uint32_t i = 0, len = model.num_indices(); i < len; ++i) {
-                    int64_t const si = int64_t(indices[i]);
+        index_bytes = 2;
+    } else if (max_index_delta <= 0x000000007FFFFFFF) {
+        delta_indices = true;
+    }
 
-                    int64_t const delta_index = si - previous_index;
+    uint64_t const num_indices = model.num_indices();
 
-                    max_index_delta = std::max(delta_index, max_index_delta);
-                    min_index_delta = std::min(delta_index, min_index_delta);
+    binary_tag(writer, vertices_size, num_indices * index_bytes);
 
-                    previous_index = si;
-                }
-            }
+    writer.Key("num_indices");
+    writer.Uint64(num_indices);
 
-            bool   delta_indices = false;
-            size_t index_bytes   = 4;
+    writer.Key("encoding");
 
-            if (max_index_delta <= 0x000000000000FFFF && std::abs(min_index_delta) <= 0x000000000000FFFF) {
-                if (max_index_delta <= 0x0000000000007FFF) {
-                    delta_indices = true;
-                }
+    if (4 == index_bytes) {
+        if (delta_indices) {
+            writer.String("Int32");
+        } else {
+            writer.String("UInt32");
+        }
+    } else {
+        if (delta_indices) {
+            writer.String("Int16");
+        } else {
+            writer.String("UInt16");
+        }
+    }
 
-                index_bytes = 2;
-            } else if (max_index_delta <= 0x000000007FFFFFFF) {
-                delta_indices = true;
-            }
+    // close indices
+    writer.EndObject();
 
-            uint64_t const num_indices = model.num_indices();
+    // close geometry
+    writer.EndObject();
 
-            tbinary_tag(writer, vertices_size, num_indices * index_bytes);
+    // close start
+    writer.EndObject();
 
-            writer.Key("num_indices");
-            writer.Uint64(num_indices);
-
-            writer.Key("encoding");
-
-            if (4 == index_bytes) {
-                if (delta_indices) {
-                    writer.String("Int32");
-                } else {
-                    writer.String("UInt32");
-                }
-            } else {
-                if (delta_indices) {
-                    writer.String("Int16");
-                } else {
-                    writer.String("UInt16");
-                }
-            }
-
-            // close indices
-            writer.EndObject();
-
-            // close geometry
-            writer.EndObject();
-
-            // close start
-            writer.EndObject();
-     }
-
-    std::string const json_string = jstream.str();
-    uint64_t const    json_size   = json_string.size() - 1;
+    uint64_t const json_size         = sb.GetSize();
+    uint64_t const aligned_json_size = json_size + json_size % 4;
 
     const char header[] = "SUB\000";
     stream.write(header, sizeof(char) * 4);
 
-    stream.write(reinterpret_cast<char const*>(&json_size), sizeof(uint64_t));
-    stream.write(reinterpret_cast<char const*>(json_string.data()), json_size * sizeof(char));
+    stream.write(reinterpret_cast<char const*>(&aligned_json_size), sizeof(uint64_t));
+    stream.write(reinterpret_cast<char const*>(sb.GetString()), json_size * sizeof(char));
+
+    for (int64_t i = aligned_json_size - json_size; i > 0; --i) {
+        stream.put(0);
+    }
 
     // binary stuff
 
@@ -700,47 +452,6 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     }
 
     return true;
-}
-
-using Encoding = Vertex_layout_description::Encoding;
-
-void print(std::stringstream& stream, Encoding encoding) {
-    switch (encoding) {
-        case Encoding::UInt8:
-            stream << "UInt8";
-            break;
-        case Encoding::Float32:
-            stream << "Float32";
-            break;
-        case Encoding::Float32x2:
-            stream << "Float32x2";
-            break;
-        case Encoding::Float32x3:
-            stream << "Float32x3";
-            break;
-        case Encoding::Float32x4:
-            stream << "Float32x4";
-            break;
-        default:
-            stream << "Undefined";
-    }
-}
-
-std::stringstream& operator<<(std::stringstream&                        stream,
-                              Vertex_layout_description::Element const& element) {
-    stream << "{";
-    stream << "\"semantic_name\":\"" << element.semantic_name << "\",";
-    stream << "\"semantic_index\":" << element.semantic_index << ",";
-
-    stream << "\"encoding\":\"";
-    print(stream, element.encoding);
-    stream << "\",";
-    stream << "\"stream\":" << element.stream << ",";
-    stream << "\"byte_offset\":" << element.byte_offset;
-
-    stream << "}";
-
-    return stream;
 }
 
 }  // namespace model
