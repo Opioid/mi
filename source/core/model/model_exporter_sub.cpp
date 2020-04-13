@@ -2,6 +2,7 @@
 #include "base/math/vector4.inl"
 #include "base/memory/align.hpp"
 #include "model.hpp"
+#include "rapidjson/prettywriter.h"
 
 #include <fstream>
 #include <sstream>
@@ -32,6 +33,47 @@ struct Vertex_layout_description {
     };
 };
 
+static std::string to_string(Vertex_layout_description::Encoding const& encoding) {
+    using Encoding = Vertex_layout_description::Encoding;
+
+    switch (encoding) {
+        case Encoding::UInt8:
+            return "UInt8";
+        case Encoding::Float32:
+            return "Float32";
+        case Encoding::Float32x2:
+            return "Float32x2";
+        case Encoding::Float32x3:
+            return "Float32x3";
+        case Encoding::Float32x4:
+            return "Float32x4";
+        default:
+            return "Undefined";
+    }
+}
+
+template<class Writer>
+static void write(Writer& writer, Vertex_layout_description::Element const& element) {
+    writer.StartObject();
+
+    writer.Key("semantic_name");
+    writer.String(element.semantic_name.c_str());
+
+    writer.Key("semantic_index");
+    writer.Uint(element.semantic_index);
+
+    writer.Key("encoding");
+    writer.String(to_string(element.encoding).c_str());
+
+    writer.Key("stream");
+    writer.Uint(element.stream);
+
+    writer.Key("byte_offset");
+    writer.Uint(element.byte_offset);
+
+    writer.EndObject();
+}
+
 std::stringstream& operator<<(std::stringstream&                        stream,
                               Vertex_layout_description::Element const& element);
 
@@ -41,6 +83,23 @@ static void newline(std::ostream& stream, uint32_t num_tabs) noexcept {
     for (uint32_t i = 0; i < num_tabs; ++i) {
         stream << '\t';
     }
+}
+
+template<class Writer>
+static void tbinary_tag(Writer& writer, uint64_t offset, uint64_t size) noexcept {
+    writer.Key("binary");
+    writer.StartObject();
+
+//    writer.Key("index");
+//    writer.Uint(0);
+
+    writer.Key("offset");
+    writer.Uint64(offset);
+
+    writer.Key("size");
+    writer.Uint64(size);
+
+    writer.EndObject();
 }
 
 static void binary_tag(std::ostream& stream, uint64_t offset, uint64_t size) noexcept {
@@ -284,6 +343,191 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     jstream << "}";
 
     newline(jstream, 0);
+
+
+    {
+
+    rapidjson::StringBuffer sb;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+
+    writer.StartObject();
+
+    writer.Key("geometry");
+    writer.StartObject();
+
+    // Parts
+    writer.Key("parts");
+    writer.StartArray();
+
+    Model::Part const* parts = model.parts();
+    for (uint32_t i = 0, len = model.num_parts(); i < len; ++i) {
+        writer.StartObject();
+
+        writer.Key("start_index");
+        writer.Uint(parts[i].start_index);
+
+        writer.Key("num_indices");
+        writer.Uint(parts[i].num_indices);
+
+        writer.Key("material_index");
+        writer.Uint(parts[i].material_index);
+
+        writer.EndObject();
+    }
+
+    writer.EndArray();
+
+    // Vertices
+    writer.Key("vertices");
+    writer.StartObject();
+
+    static bool constexpr tangent_space_as_quaternion = true;
+    static bool constexpr interleaved_vertex_stream   = false;
+
+    bool const has_uvs_and_tangents = nullptr != model.texture_coordinates() &&
+                                      nullptr != model.tangents();
+
+    uint64_t vertex_size = 0;
+
+    if (interleaved_vertex_stream) {
+        vertex_size = sizeof(Vertex);
+    } else {
+        if (tangent_space_as_quaternion) {
+            vertex_size = (3 * 4 + 4 * 4 + 4 * 2);
+        } else {
+            vertex_size = has_uvs_and_tangents ? (3 * 4 + 3 * 4 + 3 * 4 + 2 * 4 + 1)
+                                               : (3 * 4 + 3 * 4);
+        }
+    }
+
+    uint64_t const num_vertices  = model.num_vertices();
+    uint64_t const vertices_size = num_vertices * vertex_size;
+
+    tbinary_tag(writer, 0, vertices_size);
+
+    writer.Key("num_vertices");
+    writer.Uint64(num_vertices);
+
+    writer.Key("layout");
+    writer.StartArray();
+
+        Vertex_layout_description::Element element;
+
+        using Encoding = Vertex_layout_description::Encoding;
+
+            element.semantic_name = "Position";
+            element.encoding      = Encoding::Float32x3;
+            element.stream        = 0;
+            model::write(writer, element);
+
+            if (tangent_space_as_quaternion && has_uvs_and_tangents) {
+                element.semantic_name = "Tangent_space";
+                element.encoding      = Encoding::Float32x4;
+                element.stream        = 1;
+                model::write(writer, element);
+
+
+                element.semantic_name = "Texture_coordinate";
+                element.encoding      = Encoding::Float32x2;
+                element.stream        = 2;
+                model::write(writer, element);
+
+            } else {
+                element.semantic_name = "Normal";
+                element.stream        = 1;
+                model::write(writer, element);
+
+                if (has_uvs_and_tangents) {
+
+                    element.semantic_name = "Tangent";
+                    element.stream        = 2;
+                    model::write(writer, element);
+
+                    element.semantic_name = "Texture_coordinate";
+                    element.encoding      = Encoding::Float32x2;
+                    element.stream        = 3;
+                    model::write(writer, element);
+
+                    element.semantic_name = "Bitangent_sign";
+                    element.encoding      = Encoding::UInt8;
+                    element.stream        = 4;
+                    model::write(writer, element);
+                }
+            }
+
+            writer.EndArray();
+
+            // close vertices
+            writer.EndObject();
+
+        // Indices
+        writer.Key("indices");
+        writer.StartObject();
+
+        int64_t max_index_delta = 0;
+            int64_t min_index_delta = 0;
+
+            {
+                int64_t previous_index = 0;
+
+                uint32_t const* indices = model.indices();
+                for (uint32_t i = 0, len = model.num_indices(); i < len; ++i) {
+                    int64_t const si = int64_t(indices[i]);
+
+                    int64_t const delta_index = si - previous_index;
+
+                    max_index_delta = std::max(delta_index, max_index_delta);
+                    min_index_delta = std::min(delta_index, min_index_delta);
+
+                    previous_index = si;
+                }
+            }
+
+            bool   delta_indices = false;
+            size_t index_bytes   = 4;
+
+            if (max_index_delta <= 0x000000000000FFFF && std::abs(min_index_delta) <= 0x000000000000FFFF) {
+                if (max_index_delta <= 0x0000000000007FFF) {
+                    delta_indices = true;
+                }
+
+                index_bytes = 2;
+            } else if (max_index_delta <= 0x000000007FFFFFFF) {
+                delta_indices = true;
+            }
+
+            uint64_t const num_indices = model.num_indices();
+
+            tbinary_tag(writer, vertices_size, num_indices * index_bytes);
+
+            writer.Key("num_indices");
+            writer.Uint64(num_indices);
+
+            writer.Key("encoding");
+
+            if (4 == index_bytes) {
+                if (delta_indices) {
+                    writer.String("Int32");
+                } else {
+                    writer.String("UInt32");
+                }
+            } else {
+                if (delta_indices) {
+                    writer.String("Int16");
+                } else {
+                    writer.String("UInt16");
+                }
+            }
+
+            // close indices
+            writer.EndObject();
+
+            // close geometry
+            writer.EndObject();
+
+            // close start
+            writer.EndObject();
+     }
 
     std::string const json_string = jstream.str();
     uint64_t const    json_size   = json_string.size() - 1;
