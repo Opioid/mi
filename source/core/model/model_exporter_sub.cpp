@@ -143,7 +143,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     if (interleaved_vertex_stream) {
         vertex_size = sizeof(Vertex);
     } else {
-        if (tangent_space_as_quaternion) {
+        if (tangent_space_as_quaternion && has_uvs_and_tangents) {
             vertex_size = (3 * 4 + 4 * 4 + 4 * 2);
         } else {
             vertex_size = has_uvs_and_tangents ? (3 * 4 + 3 * 4 + 3 * 4 + 2 * 4 + 1)

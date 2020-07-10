@@ -5,12 +5,14 @@
 #include "triangle_json_handler.hpp"
 
 #include <fstream>
+#include <iostream>
 
 namespace model {
 
 Model* Importer_json::read(std::string const& name) noexcept {
     std::ifstream stream(name, std::ios::binary);
     if (!stream) {
+        std::cout << "Could not open \"" << name << "\"." << std::endl;
         return nullptr;
     }
 
@@ -42,7 +44,7 @@ Model* Importer_json::read(std::string const& name) noexcept {
     for (uint32_t i = 0; i < num_parts; ++i) {
         Part const& p = handler.parts()[i];
 
-        Model::Part part{p.num_indices, p.num_indices, p.material_index};
+        Model::Part part{p.start_index, p.num_indices, p.material_index};
 
         model->set_part(i, part);
     }
