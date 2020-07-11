@@ -1,3 +1,4 @@
+#include "base/chrono/chrono.hpp"
 #include "base/math/aabb.inl"
 #include "base/math/print.hpp"
 #include "base/math/vector3.inl"
@@ -8,6 +9,7 @@
 #include "core/model/model_importer_json.hpp"
 #include "options/options.hpp"
 
+#include <chrono>
 #include <iostream>
 
 std::string autocomplete(std::string const& source, std::string const& addition) noexcept;
@@ -25,6 +27,16 @@ int main(int argc, char* argv[]) noexcept {
         return 0;
     }
 
+    std::cout << "\"" << args.input << "\"" << std::endl;
+
+    for (size_t i = 0, len = args.input.size() + 2; i < len; ++i) {
+        std::cout << "=";
+    }
+
+    std::cout << std::endl;
+
+    auto const start = std::chrono::high_resolution_clock::now();
+
     model::Model* model = nullptr;
 
     if ("json" == suffix(args.input)) {
@@ -41,6 +53,11 @@ int main(int argc, char* argv[]) noexcept {
         return 0;
     }
 
+    std::cout << "#triangles: " << model->num_indices() / 3 << std::endl;
+    std::cout << "#vertices:  " << model->num_vertices() << std::endl;
+    std::cout << "#parts:     " << model->num_parts() << std::endl;
+    std::cout << "#materials: " << model->num_materials() << std::endl;
+
     if (args.scale > 0.f) {
         model->scale(float3(args.scale));
     }
@@ -48,19 +65,6 @@ int main(int argc, char* argv[]) noexcept {
     model->transform(args.transformations);
 
     model->set_origin(args.origin);
-
-    std::cout << "\"" << args.input << "\"" << std::endl;
-
-    for (size_t i = 0, len = args.input.size() + 2; i < len; ++i) {
-        std::cout << "=";
-    }
-
-    std::cout << std::endl;
-
-    std::cout << "#triangles: " << model->num_indices() / 3 << std::endl;
-    std::cout << "#vertices:  " << model->num_vertices() << std::endl;
-    std::cout << "#parts:     " << model->num_parts() << std::endl;
-    std::cout << "#materials: " << model->num_materials() << std::endl;
 
     AABB const box = model->aabb();
 
@@ -83,6 +87,8 @@ int main(int argc, char* argv[]) noexcept {
     exporter.write_materials(out, *model);
 
     delete model;
+
+    std::cout << chrono::seconds_since(start) << " s" << std::endl;
 
     return 0;
 }

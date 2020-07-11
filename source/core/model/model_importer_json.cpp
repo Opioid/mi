@@ -16,12 +16,21 @@ Model* Importer_json::read(std::string const& name) noexcept {
         return nullptr;
     }
 
-    rapidjson::IStreamWrapper json_stream(stream);
-
-    rapidjson::Reader reader;
-
     Json_handler handler;
-    reader.Parse(json_stream, handler);
+
+    {
+        static size_t constexpr Buffer_size = 8192;
+
+        std::vector<char> buffer(Buffer_size);
+
+        rapidjson::IStreamWrapper json_stream(stream, buffer.data(), Buffer_size);
+
+        rapidjson::Reader reader;
+
+        reader.Parse(json_stream, handler);
+
+        stream.close();
+    }
 
     if (handler.vertices().empty()) {
         return nullptr;
