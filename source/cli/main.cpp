@@ -66,6 +66,8 @@ int main(int argc, char* argv[]) noexcept {
 
     model->set_origin(args.origin);
 
+    model->try_to_fix_tangent_space();
+
     AABB const box = model->aabb();
 
     std::cout << "AABB: {\n    " << box.bounds[0] << ",\n    " << box.bounds[1] << "}" << std::endl;

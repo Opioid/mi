@@ -213,7 +213,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     writer.Key("indices");
     writer.StartObject();
 
-    int64_t max_index = 0;
+    int64_t max_index       = 0;
     int64_t max_index_delta = 0;
     int64_t min_index_delta = 0;
 
@@ -235,7 +235,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
         }
     }
 
-    bool   delta_indices = false;
+    bool     delta_indices = false;
     uint32_t index_bytes   = 4;
 
     if (max_index <= 0x000000000000FFFF) {
@@ -243,9 +243,10 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     }
 
     if (max_index_delta <= 0x0000000000007FFF && std::abs(min_index_delta) <= 0x0000000000007FFF) {
-        index_bytes = 2;
+        index_bytes   = 2;
         delta_indices = true;
-    } else if (max_index_delta <= 0x000000007FFFFFFF && std::abs(min_index_delta) <= 0x000000007FFFFFFF) {
+    } else if (max_index_delta <= 0x000000007FFFFFFF &&
+               std::abs(min_index_delta) <= 0x000000007FFFFFFF) {
         delta_indices = true;
     }
 

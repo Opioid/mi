@@ -114,6 +114,8 @@ class Model {
 
     AABB aabb() const noexcept;
 
+    void try_to_fix_tangent_space();
+
     static Quaternion tangent_space(float3 const& t, float3 const& n, float bitangent_sign);
 
   private:

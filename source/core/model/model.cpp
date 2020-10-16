@@ -321,6 +321,44 @@ AABB Model::aabb() const noexcept {
     return box;
 }
 
+void Model::try_to_fix_tangent_space() {
+    if (normals_) {
+        for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+            float3& n = normals_[i];
+
+            float const l = length(n);
+
+            if (l < 0.1f || !all_finite(n)) {
+                n = float3(0.f, 1.f, 0.f);
+            } else if (l < 0.9999f || l > 1.0001f) {
+                n /= l;
+            }
+        }
+    }
+
+    if (tangents_and_bitangent_signs_) {
+        for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+            float4 const& tbs = tangents_and_bitangent_signs_[i];
+
+            float3 t = tbs.xyz();
+            ;
+            float const l = length(t);
+
+            if (l < 0.1f || !all_finite(t)) {
+                t = tangent(normals_[i]);
+            } else if (l < 0.999f || l > 1.001f) {
+                t /= l;
+            }
+
+            if (std::abs(dot(t, normals_[i])) > 0.04f) {
+                t = tangent(normals_[i]);
+            }
+
+            tangents_and_bitangent_signs_[i] = float4(t, tbs[3]);
+        }
+    }
+}
+
 Quaternion Model::tangent_space(float3 const& t, float3 const& n, float bitangent_sign) {
     float3 const b = cross(n, t);
 
