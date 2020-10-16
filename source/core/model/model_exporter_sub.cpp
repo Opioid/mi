@@ -213,6 +213,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     writer.Key("indices");
     writer.StartObject();
 
+    int64_t max_index = 0;
     int64_t max_index_delta = 0;
     int64_t min_index_delta = 0;
 
@@ -222,6 +223,8 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
         uint32_t const* indices = model.indices();
         for (uint32_t i = 0, len = model.num_indices(); i < len; ++i) {
             int64_t const si = int64_t(indices[i]);
+
+            max_index = std::max(max_index, si);
 
             int64_t const delta_index = si - previous_index;
 
@@ -233,17 +236,18 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     }
 
     bool   delta_indices = false;
-    size_t index_bytes   = 4;
+    uint32_t index_bytes   = 4;
 
-    if (max_index_delta <= 0x000000000000FFFF && std::abs(min_index_delta) <= 0x000000000000FFFF) {
-        if (max_index_delta <= 0x0000000000007FFF) {
-            delta_indices = true;
-        }
+//    if (max_index <= 0x000000000000FFFF) {
+//        index_bytes = 2;
+//    }
 
-        index_bytes = 2;
-    } else if (max_index_delta <= 0x000000007FFFFFFF) {
-        delta_indices = true;
-    }
+//    if (max_index_delta <= 0x0000000000007FFF && std::abs(min_index_delta) <= 0x0000000000007FFF) {
+//        index_bytes = 2;
+//        delta_indices = true;
+//    } else if (max_index_delta <= 0x000000007FFFFFFF && std::abs(min_index_delta) <= 0x000000007FFFFFFF) {
+//        delta_indices = true;
+//    }
 
     uint64_t const num_indices = model.num_indices();
 
@@ -435,7 +439,7 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
             int32_t previous_index = 0;
 
             for (uint32_t i = 0; i < num_indices; ++i) {
-                int32_t const a = static_cast<int32_t>(indices[i]);
+                int32_t const a = int32_t(indices[i]);
 
                 int16_t const delta_index = int16_t(a - previous_index);
                 stream.write(reinterpret_cast<char const*>(&delta_index), sizeof(int16_t));
