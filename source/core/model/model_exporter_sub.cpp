@@ -238,16 +238,16 @@ bool Exporter_sub::write(std::string const& name, Model const& model) const noex
     bool   delta_indices = false;
     uint32_t index_bytes   = 4;
 
-//    if (max_index <= 0x000000000000FFFF) {
-//        index_bytes = 2;
-//    }
+    if (max_index <= 0x000000000000FFFF) {
+        index_bytes = 2;
+    }
 
-//    if (max_index_delta <= 0x0000000000007FFF && std::abs(min_index_delta) <= 0x0000000000007FFF) {
-//        index_bytes = 2;
-//        delta_indices = true;
-//    } else if (max_index_delta <= 0x000000007FFFFFFF && std::abs(min_index_delta) <= 0x000000007FFFFFFF) {
-//        delta_indices = true;
-//    }
+    if (max_index_delta <= 0x0000000000007FFF && std::abs(min_index_delta) <= 0x0000000000007FFF) {
+        index_bytes = 2;
+        delta_indices = true;
+    } else if (max_index_delta <= 0x000000007FFFFFFF && std::abs(min_index_delta) <= 0x000000007FFFFFFF) {
+        delta_indices = true;
+    }
 
     uint64_t const num_indices = model.num_indices();
 
