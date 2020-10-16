@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) noexcept {
         return 0;
     }
 
-    std::cout << "\"" << args.input << "\"" << std::endl;
+    std::cout << args.input << std::endl;
 
-    for (size_t i = 0, len = args.input.size() + 2; i < len; ++i) {
+    for (size_t i = 0, len = args.input.size(); i < len; ++i) {
         std::cout << "=";
     }
 

@@ -117,7 +117,7 @@ static inline std::string aiTextureType_to_string(aiMaterial const& material,
     std::string name;
 
     if (aiString path; aiReturn_SUCCESS == material.GetTexture(type, 0, &path)) {
-        name = path.data;
+        name = path.C_Str();
         std::replace(name.begin(), name.end(), '\\', '/');
     }
 
@@ -134,15 +134,21 @@ void Model::set_material(uint32_t id, aiMaterial const& material) noexcept {
     m.mask_texture = aiTextureType_to_string(material, aiTextureType_OPACITY);
 
     m.color_texture = aiTextureType_to_string(material, aiTextureType_BASE_COLOR);
-
     if (m.color_texture.empty()) {
         m.color_texture = aiTextureType_to_string(material, aiTextureType_DIFFUSE);
     }
 
     m.normal_texture = aiTextureType_to_string(material, aiTextureType_NORMALS);
+    if (m.normal_texture.empty()) {
+        m.normal_texture = aiTextureType_to_string(material, aiTextureType_HEIGHT);
+    }
 
     m.roughness_texture = aiTextureType_to_string(material, aiTextureType_DIFFUSE_ROUGHNESS);
+
     m.shininess_texture = aiTextureType_to_string(material, aiTextureType_SHININESS);
+    if (m.shininess_texture.empty()) {
+        m.shininess_texture = aiTextureType_to_string(material, aiTextureType_SPECULAR);
+    }
 
     if (aiColor3D color; aiReturn_SUCCESS == material.Get(AI_MATKEY_COLOR_DIFFUSE, color)) {
         m.diffuse_color = aiColor3D_to_float3(color);

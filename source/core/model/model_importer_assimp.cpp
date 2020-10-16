@@ -37,7 +37,7 @@ Model* Importer_assimp::read(std::string const& name) noexcept {
                   aiProcess_GenSmoothNormals |
                   aiProcess_CalcTangentSpace
                   //    | aiProcess_ImproveCacheLocality
-                  | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph);
+                  | aiProcess_OptimizeMeshes /*| aiProcess_OptimizeGraph*/);
 
     if (!scene) {
         std::cout << "Could not read \"" << name << "\". " << importer_.GetErrorString()
@@ -131,11 +131,19 @@ Model* Importer_assimp::read(std::string const& name) noexcept {
                 if (!has_uvs_and_tangents) {
                     model->set_normal(current_vertex, aiVector3_to_float3(mesh.mNormals[v]));
                 } else {
-                    float3 const tangent   = aiVector3_to_float3(mesh.mTangents[v]);
-                    float3 const bitangent = aiVector3_to_float3(mesh.mBitangents[v]);
-                    float3 const normal    = aiVector3_to_float3(mesh.mNormals[v]);
+                    if (mesh.mTangents) {
+                        float3 const tangent   = aiVector3_to_float3(mesh.mTangents[v]);
+                        float3 const bitangent = aiVector3_to_float3(mesh.mBitangents[v]);
+                        float3 const normal    = aiVector3_to_float3(mesh.mNormals[v]);
 
-                    model->set_tangent(current_vertex, tangent, bitangent, normal);
+                        model->set_tangent(current_vertex, tangent, bitangent, normal);
+                    } else {
+                        float3 const normal = aiVector3_to_float3(mesh.mNormals[v]);
+
+                        auto const [tangent, bitangent] = orthonormal_basis(normal);
+
+                        model->set_tangent(current_vertex, tangent, bitangent, normal);
+                    }
                 }
             }
         }
