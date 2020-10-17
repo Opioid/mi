@@ -16,28 +16,33 @@ namespace model {
 static inline float3 aiVector3_to_float3(aiVector3D const& v) noexcept;
 
 Model* Importer_assimp::read(std::string const& name) noexcept {
-    //    std::vector<aiNode const*> nodes;
-    //    guess_light_nodes(name, nodes);
+    std::vector<aiNode const*> nodes;
+    guess_light_nodes(name, nodes);
 
-    //    std::stringstream excludes;
+    std::stringstream excludes;
 
-    //    for (auto const n : nodes) {
-    //        excludes << n->mName.C_Str() << " ";
-    //    }
+    for (auto const n : nodes) {
+        excludes << n->mName.C_Str() << " ";
+    }
+
+    importer_.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, excludes.str());
 
     importer_.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
                                  aiComponent_COLORS /*| aiComponent_NORMALS*/);
 
-    //   importer_.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, excludes.str());
+    importer_.SetPropertyInteger(AI_CONFIG_PP_FD_CHECKAREA, 1);
+    importer_.SetPropertyBool(AI_CONFIG_PP_FD_REMOVE, true);
+    importer_.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE,
+                                 aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
     aiScene const* scene = importer_.ReadFile(
         name, aiProcess_ConvertToLeftHanded | aiProcess_RemoveComponent | aiProcess_Triangulate |
-                  aiProcess_RemoveRedundantMaterials | aiProcess_PreTransformVertices |
+                  aiProcess_FindDegenerates |
+                  aiProcess_RemoveRedundantMaterials | /*aiProcess_PreTransformVertices |*/
                   aiProcess_JoinIdenticalVertices | aiProcess_FixInfacingNormals |
-                  aiProcess_GenSmoothNormals |
-                  aiProcess_CalcTangentSpace
-                  //    | aiProcess_ImproveCacheLocality
-                  | aiProcess_OptimizeMeshes /*| aiProcess_OptimizeGraph*/);
+                  aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
+                  //   aiProcess_ImproveCacheLocality
+                  aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph | aiProcess_SortByPType);
 
     if (!scene) {
         std::cout << "Could not read \"" << name << "\". " << importer_.GetErrorString()
@@ -203,7 +208,18 @@ void Importer_assimp::guess_light_nodes(std::string const&          name,
     for (uint32_t i = 0, len = scene->mNumMaterials; i < len; ++i) {
         std::string const material_name = scene->mMaterials[i]->GetName().C_Str();
 
-        if (std::string::npos != material_name.find("Emissive")) {
+        //        if (std::string::npos != material_name.find("Emissive")) {
+        //            emissive_materials.insert(i);
+        //        }
+
+        if (material_name == "Vespa_Headlight" || material_name == "Shopsign_Pharmacy" ||
+            material_name == "Shopsign_Book_Store" ||
+            material_name == "Paris_StringLights_01_White_Color" ||
+            material_name == "Paris_StringLights_01_Red_Color" ||
+            material_name == "Paris_StringLights_01_Green_Color" ||
+            material_name == "Paris_StringLights_01_Blue_Color" ||
+            material_name == "Paris_StringLights_01_Pink_Color" ||
+            material_name == "Paris_StringLights_01_Orange_Color") {
             emissive_materials.insert(i);
         }
     }

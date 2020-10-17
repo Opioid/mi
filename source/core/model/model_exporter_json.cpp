@@ -8,6 +8,7 @@
 #include "rapidjson/prettywriter.h"
 
 #include <fstream>
+#include <iomanip>
 
 namespace model {
 
@@ -96,6 +97,8 @@ bool Exporter_json::write(std::string const& name, Model const& model) const noe
 
     writer.EndObject();
     */
+
+    stream << std::setprecision(7);
 
     stream << "{\n";
 
