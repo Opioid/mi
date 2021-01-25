@@ -289,21 +289,20 @@ bool Exporter_json::write(std::string const& name, Model const& model) const noe
     return true;
 }
 
-static void put_texture(std::ofstream& stream, std::string_view usage, std::string const& name,
-                        bool& previous) noexcept {
-    if (!name.empty()) {
-        if (previous) {
-            stream << ", {\n";
-        } else {
-            stream << "\t\t\t\t\t\t{\n";
-        }
-
-        stream << "\t\t\t\t\t\t\t\"usage\": \"" << usage << "\",\n";
-        stream << "\t\t\t\t\t\t\t\"file\": \"" << name.substr(9) << "\"\n";
-        stream << "\t\t\t\t\t\t}";
-
-        previous = true;
+template <class Writer>
+static void put_texture(Writer& writer, std::string_view usage, std::string const& name) {
+    if (name.empty()) {
+        return;
     }
+
+    writer.StartObject();
+
+    writer.Key("usage");
+    writer.String(usage.data());
+    writer.Key("file");
+    writer.String(name.c_str());
+
+    writer.EndObject();
 }
 
 bool Exporter_json::write_materials(std::string const& name, Model const& model) const noexcept {
@@ -313,12 +312,114 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
         return true;
     }
 
-    std::ofstream stream(name + ".materials.json");
+    std::ofstream stream(name + ".scene");
 
     if (!stream) {
         return false;
     }
 
+
+    rapidjson::OStreamWrapper json_stream(stream);
+
+    rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(json_stream);
+
+    writer.SetFormatOptions(rapidjson::kFormatSingleLineArray);
+    writer.SetMaxDecimalPlaces(5);
+
+    writer.StartObject();
+
+    writer.Key("materials");
+    writer.StartArray();
+
+    for (uint32_t i = 0, len = model.num_materials(); i < len; ++i) {
+        auto const& m = materials[i];
+
+        writer.StartObject();
+        writer.Key("name");
+        writer.String(m.name.c_str());
+
+        writer.Key("rendering");
+        writer.StartObject();
+
+        writer.Key("Substitute");
+        writer.StartObject();
+
+        bool const has_textures = !m.mask_texture.empty() || !m.color_texture.empty() ||
+                                  !m.normal_texture.empty();
+
+        if (has_textures) {
+            writer.Key("textures");
+            writer.StartArray();
+
+            put_texture(writer, "Mask", m.mask_texture);
+            put_texture(writer, "Color", m.color_texture);
+            put_texture(writer, "Normal", m.normal_texture);
+
+            if (!m.roughness_texture.empty()) {
+                put_texture(writer, "Roughness", m.roughness_texture);
+            } else {
+                put_texture(writer, "Shininess", m.shininess_texture);
+            }
+
+            writer.EndArray();
+        }
+
+        if (m.color_texture.empty()) {
+            writer.Key("color");
+            writer.StartArray();
+            writer.Double(m.diffuse_color[0]);
+            writer.Double(m.diffuse_color[1]);
+            writer.Double(m.diffuse_color[2]);
+            writer.EndArray();
+        }
+
+        writer.Key("roughness");
+        writer.Double(m.roughness);
+
+        if (m.two_sided) {
+            writer.Key("two_sided");
+            writer.Bool(m.two_sided);
+        }
+
+        writer.EndObject();
+        writer.EndObject();
+        writer.EndObject();
+    }
+
+
+    writer.EndArray();
+
+    writer.Key("entities");
+    writer.StartArray();
+
+    writer.StartObject();
+
+    writer.Key("type");
+    writer.String("Prop");
+    writer.Key("shape");
+    writer.StartObject();
+    writer.Key("file");
+    writer.String(name.c_str());
+    writer.EndObject();
+
+    writer.SetFormatOptions(rapidjson::kFormatDefault);
+
+    writer.Key("materials");
+    writer.StartArray();
+    for (uint32_t i = 0, len = model.num_materials(); i < len; ++i) {
+        writer.String(materials[i].name.c_str());
+    }
+    writer.EndArray();
+
+    writer.EndObject();
+
+    writer.EndArray();
+
+    writer.EndObject();
+
+
+
+    /*
     stream << "{\n";
 
     stream << "\t\"materials\": [\n\t\t";
@@ -358,7 +459,13 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
             stream << "\t\t\t\t\t\"color\": " << m.diffuse_color << ",\n";
         }
 
-        stream << "\t\t\t\t\t\"roughness\": " << m.roughness << "\n";
+        stream << "\t\t\t\t\t\"roughness\": " << m.roughness;
+
+        if (m.two_sided) {
+            stream << ",\n\t\t\t\t\t\"two_sided\": true\n";
+        } else {
+            stream << "\n";
+        }
 
         stream << "\t\t\t\t}\n";
 
@@ -388,7 +495,7 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
     stream << "\n\t]\n";
 
     stream << "}";
-
+*/
     return true;
 }
 

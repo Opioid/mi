@@ -15,10 +15,11 @@ namespace model {
 class Model {
   public:
     enum class Transformation {
-        Swap_YZ   = 1 << 0,
-        Reverse_X = 1 << 1,
-        Reverse_Y = 1 << 2,
-        Reverse_Z = 1 << 3
+        Swap_XY   = 1 << 0,
+        Swap_YZ   = 1 << 1,
+        Reverse_X = 1 << 2,
+        Reverse_Y = 1 << 3,
+        Reverse_Z = 1 << 4
 
     };
 
@@ -48,6 +49,8 @@ class Model {
         float3 emissive_color = float3(0.f);
 
         float roughness = -1.f;
+
+        bool two_sided = false;
     };
 
     ~Model() noexcept;

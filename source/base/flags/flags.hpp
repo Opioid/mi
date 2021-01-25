@@ -14,7 +14,7 @@ struct Flags {
     Flags(T flag) : values(impl_type(flag)) {}
 
     constexpr bool empty() const {
-        return impl_type(0) != values;
+        return impl_type(0) == values;
     }
 
     constexpr bool is(T flag) const {

@@ -167,6 +167,10 @@ void Model::set_material(uint32_t id, aiMaterial const& material) noexcept {
     }
 
     m.roughness = roughness;
+
+    if (int32_t ts; aiReturn_SUCCESS == material.Get(AI_MATKEY_TWOSIDED, ts)) {
+        m.two_sided = 0 != ts;
+    }
 }
 
 void Model::set_position(uint32_t id, float3 const& p) noexcept {
@@ -213,13 +217,18 @@ void Model::transform(flags::Flags<Transformation> transformations) noexcept {
         return;
     }
 
-    bool const single_transformation = transformations == Transformation::Swap_YZ ||
+    bool const single_transformation = transformations == Transformation::Swap_XY ||
+                                       transformations == Transformation::Swap_YZ ||
                                        transformations == Transformation::Reverse_X ||
                                        transformations == Transformation::Reverse_Y ||
                                        transformations == Transformation::Reverse_Z;
 
     if (positions_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+            if (transformations.is(Transformation::Swap_XY)) {
+                std::swap(positions_[i][0], positions_[i][1]);
+            }
+
             if (transformations.is(Transformation::Swap_YZ)) {
                 std::swap(positions_[i][1], positions_[i][2]);
             }
@@ -240,6 +249,10 @@ void Model::transform(flags::Flags<Transformation> transformations) noexcept {
 
     if (normals_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+            if (transformations.is(Transformation::Swap_XY)) {
+                std::swap(normals_[i][0], normals_[i][1]);
+            }
+
             if (transformations.is(Transformation::Swap_YZ)) {
                 std::swap(normals_[i][1], normals_[i][2]);
             }
@@ -260,6 +273,10 @@ void Model::transform(flags::Flags<Transformation> transformations) noexcept {
 
     if (tangents_and_bitangent_signs_) {
         for (uint32_t i = 0, len = num_vertices_; i < len; ++i) {
+            if (transformations.is(Transformation::Swap_XY)) {
+                std::swap(tangents_and_bitangent_signs_[i][0], tangents_and_bitangent_signs_[i][1]);
+            }
+
             if (transformations.is(Transformation::Swap_YZ)) {
                 std::swap(tangents_and_bitangent_signs_[i][1], tangents_and_bitangent_signs_[i][2]);
             }

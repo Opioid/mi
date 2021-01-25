@@ -23,9 +23,11 @@ Model* Importer_assimp::read(std::string const& name) noexcept {
 
     for (auto const n : nodes) {
         excludes << n->mName.C_Str() << " ";
+
+    //    std::cout << n->mName.C_Str() << std::endl;
     }
 
-    importer_.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, excludes.str());
+ //   importer_.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, excludes.str());
 
     importer_.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
                                  aiComponent_COLORS /*| aiComponent_NORMALS*/);
@@ -38,11 +40,16 @@ Model* Importer_assimp::read(std::string const& name) noexcept {
     aiScene const* scene = importer_.ReadFile(
         name, aiProcess_ConvertToLeftHanded | aiProcess_RemoveComponent | aiProcess_Triangulate |
                   aiProcess_FindDegenerates |
-                  aiProcess_RemoveRedundantMaterials | /*aiProcess_PreTransformVertices |*/
+                  aiProcess_RemoveRedundantMaterials | aiProcess_PreTransformVertices |
                   aiProcess_JoinIdenticalVertices | aiProcess_FixInfacingNormals |
                   aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
                   //   aiProcess_ImproveCacheLocality
-                  aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph | aiProcess_SortByPType);
+                  aiProcess_OptimizeMeshes | /*aiProcess_OptimizeGraph | */aiProcess_SortByPType);
+
+
+//    aiScene const* scene = importer_.ReadFile(
+//        name, aiProcess_ConvertToLeftHanded );
+
 
     if (!scene) {
         std::cout << "Could not read \"" << name << "\". " << importer_.GetErrorString()
@@ -182,17 +189,16 @@ bool contains_material(aiNode const* node, aiScene const* scene,
 
 void gather_nodes(aiNode const* node, aiScene const* scene, std::set<uint32_t> const& materials,
                   std::vector<aiNode const*>& nodes) noexcept {
-    uint32_t const num_children = node->mNumChildren;
-
-    if (0 == num_children) {
         if (contains_material(node, scene, materials)) {
             nodes.push_back(node);
+
+            std::cout << node->mName.C_Str() << std::endl;
         }
-    } else {
-        for (uint32_t i = 0; i < num_children; ++i) {
+
+        for (uint32_t i = 0, len = node->mNumChildren; i < len; ++i) {
             gather_nodes(node->mChildren[i], scene, materials, nodes);
         }
-    }
+
 }
 
 void Importer_assimp::guess_light_nodes(std::string const&          name,
@@ -212,14 +218,17 @@ void Importer_assimp::guess_light_nodes(std::string const&          name,
         //            emissive_materials.insert(i);
         //        }
 
-        if (material_name == "Vespa_Headlight" || material_name == "Shopsign_Pharmacy" ||
-            material_name == "Shopsign_Book_Store" ||
-            material_name == "Paris_StringLights_01_White_Color" ||
-            material_name == "Paris_StringLights_01_Red_Color" ||
-            material_name == "Paris_StringLights_01_Green_Color" ||
-            material_name == "Paris_StringLights_01_Blue_Color" ||
-            material_name == "Paris_StringLights_01_Pink_Color" ||
-            material_name == "Paris_StringLights_01_Orange_Color") {
+        if (/*material_name == "Vespa_Headlight" ||
+            material_name == "Shopsign_Pharmacy_Emissive" ||
+            material_name == "Shopsign_Book_Store_Emissive" ||
+            material_name == "Paris_StringLights_01_White_Color_Emissive" ||
+            material_name == "Paris_StringLights_01_Red_Color_Emissive" ||
+            material_name == "Paris_StringLights_01_Green_Color_Emissive" ||
+            material_name == "Paris_StringLights_01_Blue_Color_Emissive" ||
+            material_name == "Paris_StringLights_01_Pink_Color_Emissive" ||*/
+            material_name == "Paris_StringLights_01_Orange_Color_Emissive"// ||
+            /*material_name == "Spotlight_Glass_Emissive"*/) {
+
             emissive_materials.insert(i);
         }
     }
