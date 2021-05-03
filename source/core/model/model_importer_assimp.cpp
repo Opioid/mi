@@ -15,6 +15,13 @@ namespace model {
 
 static inline float3 aiVector3_to_float3(aiVector3D const& v) noexcept;
 
+static inline bool has_aiTextureType(aiMaterial const& material,
+                                     aiTextureType     type) noexcept {
+    aiString path;
+
+    return aiReturn_SUCCESS == material.GetTexture(type, 0, &path);
+}
+
 Model* Importer_assimp::read(std::string const& name) noexcept {
     std::vector<aiNode const*> nodes;
     guess_light_nodes(name, nodes);
@@ -39,7 +46,7 @@ Model* Importer_assimp::read(std::string const& name) noexcept {
 
     aiScene const* scene = importer_.ReadFile(
         name, aiProcess_ConvertToLeftHanded | aiProcess_RemoveComponent | aiProcess_Triangulate |
-                  aiProcess_FindDegenerates |
+                  aiProcess_FindDegenerates | aiProcess_FindInvalidData |
                   aiProcess_RemoveRedundantMaterials | aiProcess_PreTransformVertices |
                   aiProcess_JoinIdenticalVertices | aiProcess_FixInfacingNormals |
                   aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
@@ -192,7 +199,7 @@ void gather_nodes(aiNode const* node, aiScene const* scene, std::set<uint32_t> c
         if (contains_material(node, scene, materials)) {
             nodes.push_back(node);
 
-            std::cout << node->mName.C_Str() << std::endl;
+            // std::cout << node->mName.C_Str() << std::endl;
         }
 
         for (uint32_t i = 0, len = node->mNumChildren; i < len; ++i) {
@@ -217,6 +224,12 @@ void Importer_assimp::guess_light_nodes(std::string const&          name,
         //        if (std::string::npos != material_name.find("Emissive")) {
         //            emissive_materials.insert(i);
         //        }
+
+        if (has_aiTextureType(*scene->mMaterials[i], aiTextureType_EMISSION_COLOR) ||
+            has_aiTextureType(*scene->mMaterials[i], aiTextureType_EMISSIVE)) {
+            emissive_materials.insert(i);
+            continue;
+        }
 
         if (/*material_name == "Vespa_Headlight" ||
             material_name == "Shopsign_Pharmacy_Emissive" ||

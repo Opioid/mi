@@ -359,6 +359,11 @@ bool Exporter_json::write_materials(std::string const& name, std::string const& 
             writer.EndArray();
         }
 
+        if (!m.emission_texture.empty()) {
+            writer.Key("emission");
+            put_texture(writer, m.emission_texture);
+        }
+
         if (!m.mask_texture.empty()) {
             writer.Key("mask");
             put_texture(writer, m.mask_texture);
