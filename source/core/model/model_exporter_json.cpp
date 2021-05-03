@@ -366,7 +366,7 @@ bool Exporter_json::write_materials(std::string const& name, std::string const& 
 
         if (!m.normal_texture.empty()) {
             writer.Key("normal");
-            put_texture(writer, m.color_texture);
+            put_texture(writer, m.normal_texture);
         }
 
         if (!m.roughness_texture.empty()) {
