@@ -290,22 +290,25 @@ bool Exporter_json::write(std::string const& name, Model const& model) const noe
 }
 
 template <class Writer>
-static void put_texture(Writer& writer, std::string_view usage, std::string const& name) {
+static void put_texture(Writer& writer, std::string const& name, bool invert = false) {
     if (name.empty()) {
         return;
     }
 
     writer.StartObject();
 
-    writer.Key("usage");
-    writer.String(usage.data());
     writer.Key("file");
     writer.String(name.c_str());
+
+    if (invert) {
+        writer.Key("invert");
+        writer.Bool(invert);
+    }
 
     writer.EndObject();
 }
 
-bool Exporter_json::write_materials(std::string const& name, Model const& model) const noexcept {
+bool Exporter_json::write_materials(std::string const& name, std::string const& scene_name, Model const& model) const noexcept {
     auto const* materials = model.materials();
 
     if (!materials) {
@@ -344,27 +347,10 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
         writer.Key("Substitute");
         writer.StartObject();
 
-        bool const has_textures = !m.mask_texture.empty() || !m.color_texture.empty() ||
-                                  !m.normal_texture.empty();
-
-        if (has_textures) {
-            writer.Key("textures");
-            writer.StartArray();
-
-            put_texture(writer, "Mask", m.mask_texture);
-            put_texture(writer, "Color", m.color_texture);
-            put_texture(writer, "Normal", m.normal_texture);
-
-            if (!m.roughness_texture.empty()) {
-                put_texture(writer, "Roughness", m.roughness_texture);
-            } else {
-                put_texture(writer, "Shininess", m.shininess_texture);
-            }
-
-            writer.EndArray();
-        }
-
-        if (m.color_texture.empty()) {
+        if (!m.color_texture.empty()) {
+            writer.Key("color");
+            put_texture(writer, m.color_texture);
+        } else {
             writer.Key("color");
             writer.StartArray();
             writer.Double(m.diffuse_color[0]);
@@ -373,8 +359,29 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
             writer.EndArray();
         }
 
-        writer.Key("roughness");
-        writer.Double(m.roughness);
+        if (!m.mask_texture.empty()) {
+            writer.Key("mask");
+            put_texture(writer, m.mask_texture);
+        }
+
+        if (!m.normal_texture.empty()) {
+            writer.Key("normal");
+            put_texture(writer, m.color_texture);
+        }
+
+        if (!m.roughness_texture.empty()) {
+            writer.Key("roughness");
+            put_texture(writer, m.roughness_texture);
+        } else if (!m.specular_texture.empty()) {
+            writer.Key("roughness");
+            put_texture(writer, m.specular_texture);
+        } else if (!m.shininess_texture.empty()) {
+            writer.Key("roughness");
+            put_texture(writer, m.shininess_texture, true);
+        } else {
+            writer.Key("roughness");
+            writer.Double(m.roughness);
+        }
 
         if (m.two_sided) {
             writer.Key("two_sided");
@@ -399,7 +406,7 @@ bool Exporter_json::write_materials(std::string const& name, Model const& model)
     writer.Key("shape");
     writer.StartObject();
     writer.Key("file");
-    writer.String(name.c_str());
+    writer.String(scene_name.c_str());
     writer.EndObject();
 
     writer.SetFormatOptions(rapidjson::kFormatDefault);

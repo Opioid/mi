@@ -42,6 +42,7 @@ class Model {
         std::string color_texture;
         std::string normal_texture;
         std::string roughness_texture;
+        std::string specular_texture;
         std::string shininess_texture;
 
         float3 diffuse_color = float3(0.75f);

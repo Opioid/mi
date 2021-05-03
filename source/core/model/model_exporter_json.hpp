@@ -11,7 +11,7 @@ class Exporter_json {
   public:
     bool write(std::string const& name, Model const& model) const noexcept;
 
-    bool write_materials(std::string const& name, Model const& model) const noexcept;
+    bool write_materials(std::string const& name, std::string const& scene_name, Model const& model) const noexcept;
 };
 
 }  // namespace model

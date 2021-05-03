@@ -140,15 +140,17 @@ void Model::set_material(uint32_t id, aiMaterial const& material) noexcept {
 
     m.normal_texture = aiTextureType_to_string(material, aiTextureType_NORMALS);
     if (m.normal_texture.empty()) {
+        m.normal_texture = aiTextureType_to_string(material, aiTextureType_NORMAL_CAMERA);
+    }
+    if (m.normal_texture.empty()) {
         m.normal_texture = aiTextureType_to_string(material, aiTextureType_HEIGHT);
     }
 
     m.roughness_texture = aiTextureType_to_string(material, aiTextureType_DIFFUSE_ROUGHNESS);
 
+    m.specular_texture = aiTextureType_to_string(material, aiTextureType_SPECULAR);
+
     m.shininess_texture = aiTextureType_to_string(material, aiTextureType_SHININESS);
-    if (m.shininess_texture.empty()) {
-        m.shininess_texture = aiTextureType_to_string(material, aiTextureType_SPECULAR);
-    }
 
     if (aiColor3D color; aiReturn_SUCCESS == material.Get(AI_MATKEY_COLOR_DIFFUSE, color)) {
         m.diffuse_color = aiColor3D_to_float3(color);

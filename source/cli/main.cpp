@@ -12,11 +12,13 @@
 #include <chrono>
 #include <iostream>
 
-std::string autocomplete(std::string const& source, std::string const& addition) noexcept;
+static std::string autocomplete(std::string const& source, std::string const& addition) noexcept;
 
-std::string_view suffix(std::string_view filename) noexcept;
+static std::string suffix(std::string const&  filename) noexcept;
 
-std::string discard_extension(std::string const& filename) noexcept;
+static std::string extract_filename(std::string const& filename) noexcept;
+
+static std::string discard_extension(std::string const& filename) noexcept;
 
 int main(int argc, char* argv[]) noexcept {
     auto const args = options::parse(argc, argv);
@@ -75,18 +77,22 @@ int main(int argc, char* argv[]) noexcept {
     std::string const out = discard_extension(
         args.output.empty() ? args.input : autocomplete(args.output, args.input));
 
-    std::string_view const ext = suffix(args.output);
+    std::string ext = suffix(args.output);
+
+    if (ext.empty()) {
+        ext = "sub";
+    }
 
     model::Exporter_json exporter;
 
-    if (ext.empty() || "sub" == ext) {
+    if ("sub" == ext) {
         model::Exporter_sub exporter_sub;
         exporter_sub.write(out, *model);
     } else if ("json" == ext) {
         exporter.write(out, *model);
     }
 
-    exporter.write_materials(out, *model);
+    exporter.write_materials(out, extract_filename(out) + "." + ext, *model);
 
     delete model;
 
@@ -103,9 +109,14 @@ std::string autocomplete(std::string const& source, std::string const& addition)
     return source;
 }
 
-std::string_view suffix(std::string_view filename) noexcept {
+std::string suffix(std::string const&  filename) noexcept {
     size_t const i = filename.find_last_of('.');
     return filename.substr(i + 1, std::string::npos);
+}
+
+std::string extract_filename(std::string const& filename) noexcept {
+    size_t const i = filename.find_last_of('/') + 1;
+    return filename.substr(i, filename.find_first_of('.') - i);
 }
 
 std::string discard_extension(std::string const& filename) noexcept {
