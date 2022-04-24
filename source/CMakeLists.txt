@@ -22,7 +22,7 @@ endif ()
 
 if (LINUX) 
 	# linux stuff here
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -W -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -W -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-copy-with-user-provided-copy")
 
 	#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
