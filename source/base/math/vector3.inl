@@ -1,10 +1,7 @@
 #ifndef SU_BASE_MATH_VECTOR3_INL
 #define SU_BASE_MATH_VECTOR3_INL
 
-#include "exp.hpp"
 #include "math.hpp"
-#include "simd/simd.inl"
-#include "simd_vector.inl"
 #include "vector2.inl"
 #include "vector3.hpp"
 
@@ -483,24 +480,10 @@ static inline float constexpr squared_length(Vector3f_a const& v) noexcept {
 
 static inline Vector3f_a normalize(Vector3f_a const& v) noexcept {
     // This is slowest on both machines
-    //	return v / length(v);
+    return v / length(v);
 
     // This seems to give the best performance on clang & AMD
-    return rsqrt(dot(v, v)) * v;
-}
-
-static inline Vector3f_a reciprocal(Vector3f_a const& v) noexcept {
-    //	return Vector3f_a(1.f / v[0], 1.f / v[1], 1.f / v[2]);
-
-    Vector sx = simd::load_float4(v.v);
-
-    Vector rcp = _mm_rcp_ps(sx);
-    rcp        = _mm_and_ps(rcp, simd::Mask3);
-    Vector mul = _mm_mul_ps(sx, _mm_mul_ps(rcp, rcp));
-
-    Vector3f_a result;
-    simd::store_float4(result.v, _mm_sub_ps(_mm_add_ps(rcp, rcp), mul));
-    return result;
+    //return rsqrt(dot(v, v)) * v;
 }
 
 static inline Vector3f_a constexpr cross(Vector3f_a const& a, Vector3f_a const& b) noexcept {
@@ -523,16 +506,6 @@ static inline float constexpr squared_distance(Vector3f_a const& a, Vector3f_a c
 static inline Vector3f_a constexpr saturate(Vector3f_a const& v) noexcept {
     return Vector3f_a(std::clamp(v[0], 0.f, 1.f), std::clamp(v[1], 0.f, 1.f),
                       std::clamp(v[2], 0.f, 1.f));
-}
-
-static inline Vector3f_a exp(Vector3f_a const& v) {
-    //	return Vector3f_a(math::exp(v[0]), math::exp(v[1]), math::exp(v[2]));
-    Vector x = simd::load_float4(v.v);
-    x        = exp(x);
-
-    Vector3f_a r;
-    simd::store_float4(r.v, x);
-    return r;
 }
 
 static inline Vector3f_a pow(Vector3f_a const& v, float e) noexcept {
@@ -558,42 +531,13 @@ static inline Vector3f_a_pair orthonormal_basis(Vector3f_a const& n) noexcept {
     // Building an Orthonormal Basis, Revisited
     // http://jcgt.org/published/0006/01/01/
 
-    //	float const sign = std::copysign(1.f, n[2]);
-    float const sign = copysign1(n[2]);
+	float const sign = std::copysign(1.f, n[2]);
     float const c    = -1.f / (sign + n[2]);
     float const d    = n[0] * n[1] * c;
 
     return {Vector3f_a(1.f + sign * n[0] * n[0] * c, sign * d, -sign * n[0]),
             Vector3f_a(d, sign + n[1] * n[1] * c, -n[1])};
 }
-
-// https://twitter.com/ian_mallett/status/846631289822232577
-/*
-static inline void orthonormal_basis_sse(Vector3f_a const& n, Vector3f_a& t,
-Vector3f_a& b) { Vector const u = simd::load_float3(n.v);
-
-        float const sign = copysign1(n[2]);
-
-        __m128 temp0 = _mm_set_ps1(1.f / (sign + n[2]));
-
-        __m128 temp0_0 = _mm_shuffle_ps(u, u, _MM_SHUFFLE(0, 1, 0, 0));
-        temp0 = _mm_mul_ps(temp0, temp0_0);
-
-        __m128 temp0_1 = _mm_shuffle_ps(u, u, _MM_SHUFFLE(0, 1, 1, 0));
-        temp0 = _mm_mul_ps(temp0, temp0_1);
-
-        __m128 temp1 = _mm_shuffle_ps(temp0, u, _MM_SHUFFLE(3, 0, 1, 0));
-        __m128 temp2 = _mm_set_ps1(sign);
-        __m128 temp3 = _mm_set_ps(0.f, 0.f, 0.f, 1.f);
-        temp1 = _mm_mul_ps(temp1, temp2);
-
-        simd::store_float4(t.v, _mm_sub_ps(temp3, temp1));
-
-        __m128 temp4 = _mm_set_ps(0.f, 0.f, sign, 0.f);
-        __m128 temp5 = _mm_shuffle_ps(temp0, u, _MM_SHUFFLE(3, 1, 2,1));
-
-        simd::store_float4(b.v, _mm_sub_ps(temp4, temp5));
-}*/
 
 static inline Vector3f_a tangent(Vector3f_a const& n) noexcept {
     float const sign = std::copysign(1.f, n[2]);
@@ -665,28 +609,6 @@ static inline Vector3f_a abs(Vector3f_a const& v) noexcept {
 
 static inline Vector3f_a cos(Vector3f_a const& v) noexcept {
     return Vector3f_a(std::cos(v[0]), std::cos(v[1]), std::cos(v[2]));
-}
-
-static inline Vector3f_a sqrt(Vector3f_a const& v) noexcept {
-    //	return Vector3f_a(std::sqrt(v[0]), std::sqrt(v[1]), std::sqrt(v[2]));
-
-    Vector x = simd::load_float3(v.v);
-    x        = sqrt(x);
-
-    Vector3f_a r;
-    simd::store_float4(r.v, x);
-    return r;
-}
-
-static inline Vector3f_a log(Vector3f_a const& v) noexcept {
-    //	return Vector3f_a(std::log(v[0]), std::log(v[1]), std::log(v[2]));
-
-    Vector x = simd::load_float4(v.v);
-    x        = log(x);
-
-    Vector3f_a r;
-    simd::store_float4(r.v, x);
-    return r;
 }
 
 static inline constexpr bool operator==(Vector3f_a const& a, Vector3f_a const& b) noexcept {

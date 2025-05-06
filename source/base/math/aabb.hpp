@@ -3,7 +3,6 @@
 
 #include "math/matrix.hpp"
 #include "math/vector3.hpp"
-#include "simd/simd.hpp"
 
 namespace math {
 
@@ -13,8 +12,6 @@ struct AABB {
     AABB() noexcept = default;
 
     constexpr AABB(float3 const& min, float3 const& max) noexcept;
-
-    AABB(FVector min, FVector max) noexcept;
 
     float3 const& min() const noexcept;
     float3 const& max() const noexcept;
@@ -31,17 +28,11 @@ struct AABB {
 
     bool intersect_p(ray const& ray) const noexcept;
 
-    bool intersect_p(FVector ray_origin, FVector ray_inv_direction, FVector ray_min_t,
-                     FVector ray_max_t) const noexcept;
-
     bool intersect_p(ray const& ray, float& hit_t) const noexcept;
 
     bool intersect_inside(ray const& ray, float& hit_t) const noexcept;
 
-    float3 normal(float3 const& p) const noexcept;
-
     void set_min_max(float3 const& min, float3 const& max) noexcept;
-    void set_min_max(FVector min, FVector max) noexcept;
 
     void insert(float3 const& p) noexcept;
 

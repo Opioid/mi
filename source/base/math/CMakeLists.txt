@@ -15,7 +15,6 @@ target_sources(base
     "print.hpp"
     "quaternion.hpp"
     "quaternion.inl"
-    "simd_vector.inl"
     "transformation.hpp"
     "transformation.inl"
     "vector.hpp"

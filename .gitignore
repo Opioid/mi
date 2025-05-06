@@ -1,11 +1,12 @@
 build*/
 data/
 system/
-source/base/platform/version.hpp
 *.*.user*
 *.fuse-hidden*
 *.autosave
 .directory
+.vscode
+.DS_STORE
 \#*#
 *.*~
 TAGS

@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include "simd/simd_const.hpp"
 
 namespace math {
 
@@ -96,35 +95,35 @@ static T constexpr mod(T k, T n) noexcept {
     return (k %= n) < T(0) ? k + n : k;
 }
 
-static inline float sqrt(float x) noexcept {
-    Vector xs    = _mm_load_ss(&x);
-    Vector res   = _mm_rsqrt_ss(xs);
-    Vector muls  = _mm_mul_ss(_mm_mul_ss(xs, res), res);
-    Vector sqrtx = _mm_mul_ss(
-        xs, _mm_mul_ss(_mm_mul_ss(simd::Half, res), _mm_sub_ss(simd::Three, muls)));
-    return _mm_cvtss_f32(sqrtx);
-}
+// static inline float sqrt(float x) noexcept {
+//     Vector xs    = _mm_load_ss(&x);
+//     Vector res   = _mm_rsqrt_ss(xs);
+//     Vector muls  = _mm_mul_ss(_mm_mul_ss(xs, res), res);
+//     Vector sqrtx = _mm_mul_ss(
+//         xs, _mm_mul_ss(_mm_mul_ss(simd::Half, res), _mm_sub_ss(simd::Three, muls)));
+//     return _mm_cvtss_f32(sqrtx);
+// }
 
-static inline float rsqrt(float x) noexcept {
-    Vector xs   = _mm_load_ss(&x);
-    Vector res  = _mm_rsqrt_ss(xs);
-    Vector muls = _mm_mul_ss(_mm_mul_ss(xs, res), res);
-    return _mm_cvtss_f32(_mm_mul_ss(_mm_mul_ss(simd::Half, res), _mm_sub_ss(simd::Three, muls)));
-}
+// static inline float rsqrt(float x) noexcept {
+//     Vector xs   = _mm_load_ss(&x);
+//     Vector res  = _mm_rsqrt_ss(xs);
+//     Vector muls = _mm_mul_ss(_mm_mul_ss(xs, res), res);
+//     return _mm_cvtss_f32(_mm_mul_ss(_mm_mul_ss(simd::Half, res), _mm_sub_ss(simd::Three, muls)));
+// }
 
-static inline float rcp(float x) noexcept {
-    Vector xs   = _mm_load_ss(&x);
-    Vector rcp  = _mm_rcp_ss(xs);
-    Vector muls = _mm_mul_ss(_mm_mul_ss(rcp, rcp), xs);
-    return _mm_cvtss_f32(_mm_sub_ss(_mm_add_ss(rcp, rcp), muls));
-}
+// static inline float rcp(float x) noexcept {
+//     Vector xs   = _mm_load_ss(&x);
+//     Vector rcp  = _mm_rcp_ss(xs);
+//     Vector muls = _mm_mul_ss(_mm_mul_ss(rcp, rcp), xs);
+//     return _mm_cvtss_f32(_mm_sub_ss(_mm_add_ss(rcp, rcp), muls));
+// }
 
-// https://twitter.com/ian_mallett/status/910006486453043203
-// copysign1(x) == std::copysign(1.f, x)
-static inline float copysign1(float x) noexcept {
-    Vector const result = _mm_and_ps(simd::Sign_mask, _mm_set1_ps(x));
-    return _mm_cvtss_f32(_mm_or_ps(result, simd::One));
-}
+// // https://twitter.com/ian_mallett/status/910006486453043203
+// // copysign1(x) == std::copysign(1.f, x)
+// static inline float copysign1(float x) noexcept {
+//     Vector const result = _mm_and_ps(simd::Sign_mask, _mm_set1_ps(x));
+//     return _mm_cvtss_f32(_mm_or_ps(result, simd::One));
+// }
 
 template <typename T>
 static inline T bilinear(T c00, T c10, T c01, T c11, float s, float t) noexcept {

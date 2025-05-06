@@ -3,17 +3,12 @@
 
 #include "aabb.hpp"
 #include "matrix4x4.inl"
-#include "simd_vector.inl"
 #include "vector3.inl"
 
 namespace math {
 
 inline constexpr AABB::AABB(float3 const& min, float3 const& max) noexcept : bounds{min, max} {}
 
-inline AABB::AABB(FVector min, FVector max) noexcept {
-    simd::store_float4(bounds[0].v, min);
-    simd::store_float4(bounds[1].v, max);
-}
 
 inline float3 const& AABB::min() const noexcept {
     return bounds[0];
@@ -54,62 +49,11 @@ inline bool AABB::intersect(float3 const& p) const noexcept {
     return false;
 }
 
-inline bool AABB::intersect_p(FVector ray_origin, FVector ray_inv_direction, FVector ray_min_t,
-                              FVector ray_max_t) const noexcept {
-    Vector const bb_min = simd::load_float4(bounds[0].v);
-    Vector const bb_max = simd::load_float4(bounds[1].v);
-
-    Vector const l1 = mul(sub(bb_min, ray_origin), ray_inv_direction);
-    Vector const l2 = mul(sub(bb_max, ray_origin), ray_inv_direction);
-
-    // the order we use for those min/max is vital to filter out
-    // NaNs that happens when an inv_dir is +/- inf and
-    // (box_min - pos) is 0. inf * 0 = NaN
-    Vector const filtered_l1a = math::min(l1, simd::Infinity);
-    Vector const filtered_l2a = math::min(l2, simd::Infinity);
-
-    Vector const filtered_l1b = math::max(l1, simd::Neg_infinity);
-    Vector const filtered_l2b = math::max(l2, simd::Neg_infinity);
-
-    // now that we're back on our feet, test those slabs.
-    Vector max_t = math::max(filtered_l1a, filtered_l2a);
-    Vector min_t = math::min(filtered_l1b, filtered_l2b);
-
-    // unfold back. try to hide the latency of the shufps & co.
-    max_t = math::min1(max_t, SU_ROTATE_LEFT(max_t));
-    min_t = math::max1(min_t, SU_ROTATE_LEFT(min_t));
-
-    max_t = math::min1(max_t, SU_MUX_HIGH(max_t, max_t));
-    min_t = math::max1(min_t, SU_MUX_HIGH(min_t, min_t));
-
-    return 0 != (_mm_comige_ss(max_t, ray_min_t) & _mm_comige_ss(ray_max_t, min_t) &
-                 _mm_comige_ss(max_t, min_t));
-}
-
-inline float3 AABB::normal(float3 const& p) const noexcept {
-    float3 const local_point = p - position();
-
-    float3 const size = halfsize();
-
-    float3 const distance = math::abs(size - math::abs(local_point));
-
-    uint32_t const i = math::index_min_component(distance);
-
-    float3 normal(0.f);
-    normal[i] = math::copysign1(local_point[i]);
-
-    return normal;
-}
-
 inline void AABB::set_min_max(float3 const& min, float3 const& max) noexcept {
     bounds[0] = min;
     bounds[1] = max;
 }
 
-inline void AABB::set_min_max(FVector min, FVector max) noexcept {
-    simd::store_float4(bounds[0].v, min);
-    simd::store_float4(bounds[1].v, max);
-}
 
 inline void AABB::insert(float3 const& p) noexcept {
     bounds[0] = math::min(p, bounds[0]);

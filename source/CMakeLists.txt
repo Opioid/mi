@@ -62,6 +62,9 @@ elseif (MSVC)
 	# To avoid warning spam originates from rapidjson
 	add_definitions(-D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
     add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
+elseif (APPLE)
+	add_compile_options(-Wno-deprecated-declarations)
+	add_compile_options(-Wno-unused-but-set-variable)
 endif ()
 
 add_definitions(-DASSIMP_BUILD_NO_EXPORT)
